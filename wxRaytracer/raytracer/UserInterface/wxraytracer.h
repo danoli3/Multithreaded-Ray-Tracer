@@ -22,7 +22,7 @@
 #include <map>
 #include <list>
 
-#define SAMPLE_HACK 1; // 0 still has Environment Light sample problem
+#define SAMPLE_HACK 0; // 0 still has Environment Light sample problem
 					   // 1 creates multiple instances of World (1 per thread D:)
 
 using namespace std;
