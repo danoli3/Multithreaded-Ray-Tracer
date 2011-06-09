@@ -1,3 +1,6 @@
+Multithreaded Ray Tracer Skeleton Framework 
+
+
 Project Files
 ----------------------------------------------
 wxRaytracer.NET2003.sln   - Microsoft Visual Studio .NET 2003
