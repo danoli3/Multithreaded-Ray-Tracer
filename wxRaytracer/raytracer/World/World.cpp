@@ -107,6 +107,42 @@ World::render_scene(void) const {
 		}	
 }  
 
+// This uses orthographic viewing along the zw axis
+
+void 												
+World::render_scene(const PixelPoints& grid) const {
+
+	RGBColor	pixel_color;	 	
+	Ray			ray;					
+	int 		hres 	= vp.hres;
+	int 		vres 	= vp.vres;
+	float		s		= vp.s;
+	float		zw		= 100.0;				// hardwired in
+	
+	list<RenderedPixel> render;   // for send every row
+	RenderedPixel pixel;		  // "
+	int count = 0;
+	int jump  = 0;
+	int depth = 0;
+
+	ray.d = Vector3D(0, 0, -1);
+	
+	for (int r = grid.origin.y; r < grid.end.y; r++) {// up
+		for (int c = grid.origin.x; c < grid.end.x; c++) { // aross				
+			ray.o = Point3D(s * (c - hres / 2.0 + 0.5), s * (r - vres / 2.0 + 0.5), zw);
+			pixel_color = tracer_ptr->trace_ray(ray, depth, count, jump);
+			pixel.color = pixel_color;			// for send every row
+			pixel.xy = Point2D(c,r);	// "
+			render.push_back(pixel);    // "
+			//display_pixel(r, c, pixel_color);
+		}	
+		display_pixel(render);   // send to the screen buffer every row of pixels rendered
+		render.clear();		       // "
+	}
+
+}  
+
+
 
 // ------------------------------------------------------------------ clamp
 
@@ -220,6 +256,7 @@ World::hit_objects(const Ray& ray) {
 		if (objects[j]->hit(ray, t, sr) && (t < tmin)) {
 			sr.hit_an_object	= true;
 			tmin 				= t;
+			// MT - when implementing Grids or Compound objects you are going to want to be careful with the following function. I created a variable inside the GeometricObject to set if it was a compound or grid type. Casting will also do fine. Materials can not be returned the way described in the textbook for grids/compound objects. Store the material inside the sr.material_ptr instead of in the compound object material_ptr... then here test if it is a compound object and if it is don't call the following line
 			sr.material_ptr     = objects[j]->get_material();
 			sr.hit_point 		= ray.o + t * ray.d;
 			normal 				= sr.normal;

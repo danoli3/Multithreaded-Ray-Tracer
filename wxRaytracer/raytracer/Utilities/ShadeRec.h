@@ -29,6 +29,12 @@ class ShadeRec {
 		float				t;					// ray parameter
 		World&				w;					// World reference
 		RGBColor            color;
+
+		// changes for MT implementation for the Sampler Problems
+		int					*count;	 // Count pointer to track the number of current sample
+		int					*jump;   // Jump number used for every num_samples (per pixel)
+		bool				sync;    // sync - used when there are multiple sample_hemispheres called (Environment light and AO)
+		// Just stops the count and Jump from falling out of sync
 				
 		ShadeRec(World& wr);					// constructor
 		

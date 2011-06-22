@@ -27,6 +27,10 @@ class Tracer {
 
 		virtual RGBColor	
 		trace_ray(const Ray ray, const int depth) const;
+		
+		// Overloaded trace_ray for MT implementation
+		virtual RGBColor	
+		trace_ray(const Ray ray, const int depth, int &count, int &jump) const;
 				
 	protected:
 	

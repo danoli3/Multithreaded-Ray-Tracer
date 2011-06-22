@@ -6,7 +6,7 @@
  *
  * Author : Sverre Kvaale <sverre@kvaale.com>
  * Multithreading Author: Daniel Rosser <danoli3@gmail.com>
- * Version: 0.9.1
+ * Version: 0.9.2
  */
 #include <wx/wx.h>
 #include <wx/frame.h>
@@ -22,8 +22,8 @@
 #include <map>
 #include <list>
 
-#define SAMPLE_HACK 0; // 0 still has Environment Light sample problem
-					   // 1 creates multiple instances of World (1 per thread D:)
+#define SAMPLE_HACK 0; // 0 - 1 shared world object
+					   // 1 - Creates multiple instances of World (1 per thread)
 
 using namespace std;
 

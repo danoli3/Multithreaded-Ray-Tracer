@@ -1,3 +1,5 @@
+#include "stdwx.h"
+
 #include <wx/wx.h>
 #include <wx/dcbuffer.h>
 #include "wxraytracer.h"
@@ -24,7 +26,7 @@ bool wxraytracerapp::OnInit()
    wxInitAllImageHandlers();
 
    
-   frame = new wxraytracerFrame(wxPoint(200,200), wxSize(700,700) );
+   frame = new wxraytracerFrame(wxPoint(200,200), wxSize(700,700)); 
    frame->Centre();
    frame->Show(TRUE);
    SetTopWindow(frame);
@@ -89,7 +91,7 @@ wxraytracerFrame::wxraytracerFrame(const wxPoint& pos, const wxSize& size)
    SetStatusText(wxT("Ready"));
    
    wxIcon icon(main_xpm);
-   SetIcon(icon);
+   SetIcon(icon);   
    
    wxStatusBar* statusBar = GetStatusBar();
    int widths[] = {150,300};
@@ -122,11 +124,7 @@ void wxraytracerFrame::OnSaveFile( wxCommandEvent& WXUNUSED( event ) )
 {
    wxString caption = wxT("Save File");
    
-   wxString wildcard = wxT( "JPEG files (*.jpg)|*.jpg|"
-							"TIFF files (*.tif)|*.tif|"							
-                            "PNG files (*.png)|*.png|" 
-						    "BMP files (*.bmp)|*.bmp|"
-                           );
+   wxString wildcard = wxT("JPEG files (*.jpg)|*.jpg|TIFF files (*.tif)|*.tif|PNG files (*.png)|*.png|BMP files (*.bmp)|*.bmp");
    
    wxString defaultDir = wxEmptyString;
    wxString defaultFilename = wxT("render.jpg");
@@ -149,10 +147,8 @@ void wxraytracerFrame::OnOpenFile( wxCommandEvent& WXUNUSED( event ) )
 {
    wxString caption = wxT("Choose a file");
    
-   wxString wildcard = wxT("BMP files (*.bmp)|*.bmp|"
-                           "PNG files (*.png)|*.png|"
-                           "JPEG files (*.jpg)|*.jpg|"
-                           "TIFF files (*.tif)|*.tif");
+   wxString wildcard = wxT("JPEG files (*.jpg)|*.jpg|TIFF files (*.tif)|*.tif|PNG files (*.png)|*.png|BMP files (*.bmp)|*.bmp");
+
    
    wxString defaultDir = wxEmptyString;
    wxString defaultFilename = wxEmptyString;
@@ -294,7 +290,8 @@ void WorkerThread::OnJob()
 		//Sleep(1000); // wait a while
         throw tJOB::eID_THREAD_EXIT; // confirm exit command
       case tJOB::eID_THREAD_JOB: // process a standard job		
-		world->camera_ptr->render_scene(*world, job.theJob);
+		world->camera_ptr->render_scene(*world, job.theJob); // Render Camera based scene		
+		//world->render_scene(job.theJob);					 // Orthographic render:
         queue->Report(tJOB::eID_THREAD_JOB, wxString::Format(wxT("Job #%s done."), job.arg.c_str()), id); // report successful completion
         break;
       case tJOB::eID_THREAD_JOBERR: // process a job that terminates with an error
@@ -321,6 +318,7 @@ RenderCanvas::RenderCanvas(wxWindow *parent)
 
 RenderCanvas::~RenderCanvas(void)
 {	// Double check we are not leaving anything behind in memory
+
     renderPause(); 
 	if(queue != NULL)
 	{   if(threads.size() != 0)
@@ -328,8 +326,7 @@ RenderCanvas::~RenderCanvas(void)
 		wxThread::Sleep(500);
 		delete queue;
 		queue = NULL; }	
-
-	
+		
 	if(manager != NULL)
     {	delete manager;
 		manager = NULL; 
@@ -349,16 +346,13 @@ RenderCanvas::~RenderCanvas(void)
 		if((*iter) != NULL)
 		{	delete (*iter);
 		}
-		theThreads.clear();
+		theWorlds.clear();
 	}
-#endif
-
-    
+#endif    
    
     if(timer != NULL)
     {   delete timer;
 		timer = NULL; }
-
 }
 
 void RenderCanvas::SetImage(wxImage& image)
@@ -370,7 +364,7 @@ void RenderCanvas::SetImage(wxImage& image)
    theImage = new wxBitmap(image);
    
    SetScrollbars(10, 10, (int)(theImage->GetWidth()  / 10.0f),
-                         (int)(theImage->GetHeight() / 10.0f), 0, 0, true);
+                         (int)(theImage->GetHeight() / 10.0f), 0, 0, false);
    Refresh();
 }
 
@@ -389,12 +383,25 @@ void RenderCanvas::OnDraw(wxDC& dc)
 }
 
 void RenderCanvas::OnRenderCompleted( wxCommandEvent& event )
-{
+{	  
+	 
+	   
+
 	   OnQuit();
    
 	   if(w != NULL)
 	   {  delete w;
 		  w = NULL; }
+		  
+#if SAMPLE_HACK>0
+	if(!theWorlds.empty())
+	{	for (vector<World*>::iterator iter = theWorlds.begin(); iter < theWorlds.end(); ++iter)
+		if((*iter) != NULL)
+		{	delete (*iter);
+		}
+		theWorlds.clear();
+	}
+#endif
    
 	   if(timer != NULL)
 	   {  long interval = timer->Time();
@@ -410,7 +417,7 @@ void RenderCanvas::OnRenderCompleted( wxCommandEvent& event )
 	   if(manager != NULL)
 	   {	manager->Delete();
 			delete manager;
-			manager = NULL; }	  
+			manager = NULL; }	
 }
 
 void RenderCanvas::OnNewPixel( wxCommandEvent& event )
@@ -559,7 +566,7 @@ void RenderCanvas::renderStart(void)
 	dc.SelectObject(wxNullBitmap);
    
     wxImage temp = bitmap.ConvertToImage();
-    SetImage(temp);
+    SetImage(temp);	
 
     updateTimer.Start(250);
  

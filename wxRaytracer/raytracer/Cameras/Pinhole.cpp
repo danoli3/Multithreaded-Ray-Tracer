@@ -114,6 +114,9 @@ Pinhole::render_scene(const World& w, const PixelPoints& grid)
 
 	list<RenderedPixel> render;   // for send every row
 	RenderedPixel pixel;		  // "
+	int count = 0;
+	int jump  = 0;
+	
 
 	for (int r = grid.origin.y; r < grid.end.y; r++)
 	{// up
@@ -124,7 +127,7 @@ Pinhole::render_scene(const World& w, const PixelPoints& grid)
 					pp.x = vp.s * (c - 0.5 * vp.hres + (q + 0.5) / n); 
 					pp.y = vp.s * (r - 0.5 * vp.vres + (p + 0.5) / n);
 					ray.d = get_direction(pp);
-					L += w.tracer_ptr->trace_ray(ray, depth);
+					L += w.tracer_ptr->trace_ray(ray, depth, count, jump);
 				}	
 											
 			L /= vp.num_samples;
@@ -133,9 +136,9 @@ Pinhole::render_scene(const World& w, const PixelPoints& grid)
 			pixel.color = L;			// for send every row
 			pixel.xy = Point2D(c,r);	// "
 			render.push_back(pixel);    // "
-			//w.display_pixel(r, c, L);   // for send to screen every pixel
+		//w.display_pixel(r, c, L);   // send to the screen buffer every pixel rendered
 		} 
-		w.display_pixel(render);   // for send every row
+		w.display_pixel(render);   // send to the screen buffer every row of pixels rendered
 		render.clear();		       // "
 	}
 }

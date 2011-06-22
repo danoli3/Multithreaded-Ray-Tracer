@@ -71,6 +71,9 @@ class World {
 
 		void 												
 		render_scene(void) const;
+		
+		void 												
+		render_scene(const PixelPoints& grid) const;
 						
 		RGBColor
 		max_to_one(const RGBColor& c) const;

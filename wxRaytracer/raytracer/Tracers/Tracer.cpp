@@ -30,13 +30,20 @@ Tracer::trace_ray(const Ray& ray) const {
 	return (black);
 }
 
-
 // -------------------------------------------------------------------- trace_ray
 
 RGBColor	
 Tracer::trace_ray(const Ray ray, const int depth) const {
 	return (black);
 }
+
+
+// -------------------------------------------------------------------- trace_ray
+RGBColor	
+Tracer::trace_ray(const Ray ray, const int depth, int &count, int &jump) const {
+	return (black);
+}
+
 
 
 
