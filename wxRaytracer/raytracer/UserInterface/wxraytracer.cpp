@@ -1,5 +1,3 @@
-#include "stdwx.h"
-
 #include <wx/wx.h>
 #include <wx/dcbuffer.h>
 #include "wxraytracer.h"
