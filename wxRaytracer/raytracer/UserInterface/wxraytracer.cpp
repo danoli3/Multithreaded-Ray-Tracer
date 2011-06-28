@@ -580,9 +580,11 @@ void RenderCanvas::renderStart(void)
 	w->paintArea = manager;				// Threads communicate with the manager via the World
 
 	divisions = 8;  // 8 is a nice multiple of 2
-
 	int jobWidth = w->vp.hres / divisions;
-	int jobHeight = w->vp.vres / divisions;
+	int jobHeight =  w->vp.vres / divisions;
+	float xRemainder = w->vp.hres % divisions;
+	float yRemainder = w->vp.vres % divisions;
+
 	int currentX = 0;
 	int currentY = 0;	
 	for(int y=0; y < divisions; y++)	
@@ -597,6 +599,20 @@ void RenderCanvas::renderStart(void)
 			queue->AddJob(tJOB(tJOB::eID_THREAD_JOB, wxString::Format(wxT("%u"), iJob), current));
 		}
 
+	}	
+	if(yRemainder != 0)	
+	{		int iJob = rand();
+			PixelPoints current;
+			current.origin.x = 0; current.origin.y = w->vp.vres - yRemainder;
+			current.end.x = w->vp.hres; current.end.y = w->vp.vres;
+			queue->AddJob(tJOB(tJOB::eID_THREAD_JOB, wxString::Format(wxT("%u"), iJob), current));
+	}
+	if(xRemainder != 0)
+	{		int iJob = rand();
+			PixelPoints current;
+			current.origin.x = w->vp.hres - xRemainder; current.origin.y = 0;
+			current.end.x = w->vp.hres; current.end.y = w->vp.vres;
+			queue->AddJob(tJOB(tJOB::eID_THREAD_JOB, wxString::Format(wxT("%u"), iJob), current)); 
 	}
 	//threadNumber = divisions*divisions;		// make the number of threads the number of jobs
 	//threadNumber = 4;							// simulate quad core cpu
