@@ -256,13 +256,12 @@ World::hit_objects(const Ray& ray) {
 		if (objects[j]->hit(ray, t, sr) && (t < tmin)) {
 			sr.hit_an_object	= true;
 			tmin 				= t;
-			// MT - when implementing Grids or Compound objects you are going to want to be careful with the following function. I created a variable inside the GeometricObject to set if it was a compound or grid type. Casting will also do fine. Materials can not be returned the way described in the textbook for grids/compound objects. Store the material inside the sr.material_ptr instead of in the compound object material_ptr... then here test if it is a compound object and if it is don't call the following line
-			sr.material_ptr     = objects[j]->get_material();
+			if(sr.material_ptr == NULL)
+				sr.material_ptr     = objects[j]->get_material();
 			sr.hit_point 		= ray.o + t * ray.d;
 			normal 				= sr.normal;
 			local_hit_point	 	= sr.local_hit_point;
-		}
-  
+		}  
 	if(sr.hit_an_object) {
 		sr.t = tmin;
 		sr.normal = normal;
