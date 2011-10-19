@@ -15,6 +15,9 @@
 #include "Point3D.h"
 #include "Maths.h"
 #include "ShadeRec.h"
+#include "RandomNumber.h"
+
+using namespace std;
 
 class Sampler {	
 	public:	
@@ -58,7 +61,7 @@ class Sampler {
 		map_samples_to_unit_disk(void);
 		
 		void
-		map_samples_to_hemisphere(const float p);		
+		map_samples_to_hemisphere(const float p);
 		
 		void
 		map_samples_to_sphere(void);					
@@ -68,23 +71,53 @@ class Sampler {
 		
 		Point2D											// get next sample on unit square
 		sample_unit_square(void);
+
+		Point2D
+		sample_unit_square(int &count, int &jumper);
+
+		Point2D											
+		sample_unit_square(ShadeRec& sr);
 		
 		Point2D											// get next sample on unit disk
 		sample_unit_disk(void);
+
+		Point2D											// get next sample on unit disk
+		sample_unit_disk(ShadeRec& sr);
 		
 		Point3D											// get next sample on unit hemisphere
 		sample_hemisphere(void);
-		
-		// MT - Overloaded sample_hemisphere function
+
 		Point3D
-		sample_hemisphere(ShadeRec& sr);
+		sample_hemisphere(ShadeRec& sr);		
+		
 		
 		Point3D											// get next sample on unit sphere
 		sample_sphere(void);
+
+		Point3D											
+		sample_sphere(ShadeRec& sr);
 		
 		Point2D											// only used to set up a vector noise table
 		sample_one_set(void);							// this is not discussed in the book, but see the
 														// file LatticeNoise.cpp in Chapter 31
+		Point2D											
+		sample_one_set(ShadeRec& sr);				
+		
+
+		// number generation wrappers
+		float 
+		rand_float();
+
+		float
+		rand_float(int l, float h);
+
+		unsigned long 
+		rand_int();
+
+		unsigned long
+		rand_int(int l, int h);		
+		
+
 		
 	protected:
 	
@@ -97,7 +130,28 @@ class Sampler {
 		vector<Point3D> 		sphere_samples;			// sample points on a unit sphere
 		unsigned long 			count;					// the current number of sample points used
 		int 					jump;					// random index jump
+		RandomNumber			*random;
 };
+
+inline float Sampler::rand_float()
+{
+	return random->rand_float();
+}
+
+inline float Sampler::rand_float(int l, float h)
+{
+	return random->rand_float(l, h);
+}
+
+inline unsigned long Sampler::rand_int()
+{
+	return random->rand_int();
+}
+
+inline unsigned long Sampler::rand_int(int l, int h)
+{
+	return random->rand_int(l, h);
+}
 
 #endif
 

@@ -1,3 +1,4 @@
+
 // 	Copyright (C) Kevin Suffern 2000-2007.
 //	This C++ code is for non-commercial purposes only.
 //	This C++ code is licensed under the GNU General Public License Version 2.
@@ -14,7 +15,9 @@ Sampler::Sampler(void)
 	: 	num_samples(1),
 		num_sets(83),
 		count(0),
-		jump(0) {
+		jump(0),
+		random(new RandomNumber)
+{
 	samples.reserve(num_samples * num_sets);
 	setup_shuffled_indices();
 }
@@ -26,7 +29,9 @@ Sampler::Sampler(const int ns)
 	: 	num_samples(ns),
 		num_sets(83),
 		count(0),
-		jump(0) {
+		jump(0),
+		random(new RandomNumber)
+{
 	samples.reserve(num_samples * num_sets);
 	setup_shuffled_indices();
 }
@@ -38,9 +43,11 @@ Sampler::Sampler(const int ns, const int n_sets)
 	: 	num_samples(ns),
 		num_sets(n_sets),
 		count(0),
-		jump(0) {
+		jump(0),
+		random(new RandomNumber)
+{
 	samples.reserve(num_samples * num_sets);
-	setup_shuffled_indices();
+	setup_shuffled_indices();	
 }
 
 
@@ -55,8 +62,15 @@ Sampler::Sampler(const Sampler& s)
 		hemisphere_samples(s.hemisphere_samples),
 		sphere_samples(s.sphere_samples),
 		count(s.count),
-		jump(s.jump)
-{}
+		jump(s.jump),
+		random(new RandomNumber)
+{ 
+	/*if(s.random)
+		random = s.random->clone(); 
+	else random = NULL;*/
+
+
+}
 
 
 // ------------------------------------------------------------------ assignment operator
@@ -75,11 +89,27 @@ Sampler::operator= (const Sampler& rhs)	{
 	sphere_samples		= rhs.sphere_samples;
 	count				= rhs.count;
 	jump				= rhs.jump;
+
+	if (random) {
+		delete random;
+		random = NULL;
+	}
+
+	/*if (rhs.random)
+		random = rhs.random->clone();*/	
+	random = new RandomNumber;
 	
 	return (*this);
 }
 
-Sampler::~Sampler(void) {}
+Sampler::~Sampler(void) 
+{
+	if (random) {
+		delete random;
+		random = NULL;
+	}
+
+}
 
 
 // ------------------------------------------------------------------- set_num_sets
@@ -156,6 +186,7 @@ Sampler::setup_shuffled_indices(void) {
 void
 Sampler::map_samples_to_unit_disk(void) {
 	int size = samples.size();
+	
 	float r, phi;		// polar coordinates
 	Point2D sp; 		// sample point on unit disk
 	
@@ -174,27 +205,27 @@ Sampler::map_samples_to_unit_disk(void) {
 			}
 			else {					// sector 2
 				r = sp.y;
-				phi = 2 - sp.x / sp.y;
+				phi = 2.0 - sp.x / sp.y;
 			}
 		}
 		else {						// sectors 3 and 4
 			if (sp.x < sp.y) {		// sector 3
 				r = -sp.x;
-				phi = 4 + sp.y / sp.x;
+				phi = 4.0 + sp.y / sp.x;
 			}
 			else {					// sector 4
 				r = -sp.y;
 				if (sp.y != 0.0)	// avoid division by zero at origin
-					phi = 6 - sp.x / sp.y;
+					phi = 6.0 - sp.x / sp.y;
 				else
 					phi  = 0.0;
 			}
 		}
 		
-		phi *= PI / 4.0;
-				
-		disk_samples[j].x = r * cos(phi);
-		disk_samples[j].y = r * sin(phi);
+		phi *= PI / 4.0;				
+		disk_samples.push_back(Point2D((r * cos(phi)), r * sin(phi)));
+
+
 	}
 	
 	samples.erase(samples.begin(), samples.end());
@@ -261,8 +292,27 @@ Sampler::sample_unit_square(void) {
 
 	return (samples[jump + shuffled_indices[jump + count++ % num_samples]]);  
 }
+//-------------------------------------------------------------------- sample_unit_square MT
+Point2D
+Sampler::sample_unit_square(ShadeRec& sr) {	
+	if(sr.sync == false) // if this is the first call to sample_unit_square this pixel
+	{	sr.sync = true;
+		if (*sr.count % num_samples == 0)					// start of a new pixel 									
+		*sr.jump = (rand_int() % num_sets) * num_samples;	// so set jump to a new random number
+		return (samples[*sr.jump + shuffled_indices[*sr.jump + (*sr.count)++ % num_samples]]); }
+	else				// not the first call to sample_unit_square this pixel
+		return (samples[*sr.jump + shuffled_indices[*sr.jump + *sr.count % num_samples]]);
 
+}
 
+// the final version in Listing 5.13
+
+Point2D
+Sampler::sample_unit_square(int &count, int &jumper) {
+	if (count % num_samples == 0)					// start of a new pixel 									
+		jumper = (rand_int() % num_sets) * num_samples;	// so set jump to a new random number
+	return (samples[jumper + shuffled_indices[jumper + (count)++ % num_samples]]); 
+}
 
 
 /*
@@ -281,7 +331,6 @@ Sampler::sample_unit_square(void) {
 */
 
 
-
 /*
 
 // ------------------------------------------------------------------- sample_unit_square
@@ -295,7 +344,6 @@ Sampler::sample_unit_square(void) {
 */
 
 
-
 // ------------------------------------------------------------------- sample_unit_disk
 
 Point2D
@@ -306,6 +354,18 @@ Sampler::sample_unit_disk(void) {
 	return (disk_samples[jump + shuffled_indices[jump + count++ % num_samples]]);
 }
 
+// ------------------------------------------------------------------- sample_unit_disk MT
+
+Point2D
+Sampler::sample_unit_disk(ShadeRec& sr) {
+	if(sr.sync == false) // if this is the first call to sample_unit_disk this pixel
+	{	sr.sync = true;
+		if (*sr.count % num_samples == 0)					// start of a new pixel 									
+		*sr.jump = (rand_int() % num_sets) * num_samples;	// so set jump to a new random number
+		return (disk_samples[*sr.jump + shuffled_indices[*sr.jump + (*sr.count)++ % num_samples]]); }
+	else				// not the first call to sample_unit_disk this pixel
+		return (disk_samples[*sr.jump + shuffled_indices[*sr.jump + *sr.count % num_samples]]);
+}
 
 
 // ------------------------------------------------------------------- sample_hemisphere
@@ -318,6 +378,8 @@ Sampler::sample_hemisphere(void) {
 	return (hemisphere_samples[jump + shuffled_indices[jump + count++ % num_samples]]);		
 }
 
+
+// ------------------------------------------------------------------- sample_hemisphere MT
 Point3D
 Sampler::sample_hemisphere(ShadeRec& sr)
 {	if(sr.sync == false) // if this is the first call to sample_hemisphere this pixel
@@ -331,16 +393,26 @@ Sampler::sample_hemisphere(ShadeRec& sr)
 }
 
 
-
-
 // ------------------------------------------------------------------- sample_sphere
 
 Point3D
 Sampler::sample_sphere(void) {
 	if (count % num_samples == 0)  									// start of a new pixel
-		jump = (rand_int() % num_sets) * num_samples;
-		
+		jump = (rand_int() % num_sets) * num_samples;	
 	return (sphere_samples[jump + shuffled_indices[jump + count++ % num_samples]]);		
+}
+
+// ------------------------------------------------------------------- sample_sphere MT
+
+Point3D
+Sampler::sample_sphere(ShadeRec& sr) {	
+	if(sr.sync == false) // if this is the first call to sample_sphere this pixel
+	{	sr.sync = true;
+		if (*sr.count % num_samples == 0)					// start of a new pixel 									
+		*sr.jump = (rand_int() % num_sets) * num_samples;	// so set jump to a new random number
+		return (sphere_samples[*sr.jump + shuffled_indices[*sr.jump + (*sr.count)++ % num_samples]]); }
+	else				// not the first call to sample_sphere this pixel
+		return (sphere_samples[*sr.jump + shuffled_indices[*sr.jump + *sr.count % num_samples]]);
 }
 
 
@@ -353,6 +425,12 @@ Point2D
 Sampler::sample_one_set(void) {
 	return(samples[count++ % num_samples]);  
 }
+// ------------------------------------------------------------------- sample_one_set MT
+Point2D
+Sampler::sample_one_set(ShadeRec& sr) {
+	return(samples[(*sr.count)++ % num_samples]);  
+}
+
 
 
 

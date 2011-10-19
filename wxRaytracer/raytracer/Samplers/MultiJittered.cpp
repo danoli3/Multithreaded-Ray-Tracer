@@ -1,3 +1,4 @@
+
 // 	Copyright (C) Kevin Suffern 2000-2007.
 //	This C++ code is for non-commercial purposes only.
 //	This C++ code is licensed under the GNU General Public License Version 2.
@@ -108,6 +109,7 @@ MultiJittered::generate_samples(void) {
 	for (int p = 0; p < num_sets; p++) 
 		for (int i = 0; i < n; i++)		
 			for (int j = 0; j < n; j++) {
+				float temp = rand_float(0, subcell_width);
 				samples[i * n + j + p * num_samples].x = (i * n + j) * subcell_width + rand_float(0, subcell_width);
 				samples[i * n + j + p * num_samples].y = (j * n + i) * subcell_width + rand_float(0, subcell_width);
 			}
@@ -129,9 +131,9 @@ MultiJittered::generate_samples(void) {
 		for (int i = 0; i < n; i++)		
 			for (int j = 0; j < n; j++) {
 				int k = rand_int(j, n - 1);
-				float t = samples[j * n + i + p * num_samples].y;
-				samples[j * n + i + p * num_samples].y = samples[k * n + i + p * num_samples].y;
-				samples[k * n + i + p * num_samples].y = t;
+				float t = samples[i * n + j + p * num_samples].y;
+				samples[i * n + j + p * num_samples].y = samples[i * n + k + p * num_samples].y;
+				samples[i * n + k + p * num_samples].y = t;
 		}
 }
 
