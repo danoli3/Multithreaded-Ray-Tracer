@@ -256,7 +256,7 @@ World::hit_objects(const Ray& ray) {
 		if (objects[j]->hit(ray, t, sr) && (t < tmin)) {
 			sr.hit_an_object	= true;
 			tmin 				= t;
-			if(sr.material_ptr == NULL)
+			if(objects[j]->get_material())
 				sr.material_ptr     = objects[j]->get_material();
 			sr.hit_point 		= ray.o + t * ray.d;
 			normal 				= sr.normal;
