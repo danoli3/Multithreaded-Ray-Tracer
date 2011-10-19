@@ -139,8 +139,10 @@ Pinhole::render_scene(const World& w, const PixelPoints& grid)
 		//w.display_pixel(r, c, L);   // send to the screen buffer every pixel rendered
 		} 
 		w.display_pixel(render);   // send to the screen buffer every row of pixels rendered
-		render.clear();		       // "
+		render.clear();		       // clears the render list
 	}
+	//w.display_pixel(render);   // send to the screen buffer every completion of all grid pixels rendered
+	//render.clear();		     // clears the render list
 }
 
 

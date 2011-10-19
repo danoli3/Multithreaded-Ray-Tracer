@@ -25,11 +25,14 @@ class Camera {
 		virtual
 		~Camera();   							
 
-		virtual void 																		
+		virtual void													
 		render_scene(const World& w) = 0;
 
-		virtual void 																		
+		virtual void													
 		render_scene(const World& w, const PixelPoints& grid) = 0;
+		
+		virtual void
+		render_stereo(const World& w, float x, int pixel_offset, const PixelPoints& grid); 
 		
 		void
 		set_eye(const Point3D& p);
@@ -58,6 +61,12 @@ class Camera {
 		void									
 		compute_uvw(void);
 		
+		virtual bool									
+		get_stereo(void);
+
+		int
+		get_offset();
+		
 		
 	protected:		
 	
@@ -67,6 +76,10 @@ class Camera {
 		Vector3D		u, v, w;			// orthonormal basis vectors
 		Vector3D		up;					// up vector
 		float			exposure_time;
+		
+		// Stereo 
+		bool			stereo;
+		int				offset;
 		
 		Camera& 							// assignment operator
 		operator= (const Camera& camera);
@@ -139,5 +152,21 @@ Camera::set_exposure_time(const float exposure) {
 	exposure_time = exposure;
 }
 
+// ----------------------------------------------------------------- get_stereo
+
+inline bool
+Camera::get_stereo() {
+	return stereo;
+}
+// ----------------------------------------------------------------- get_offset
+inline int
+Camera::get_offset() {
+	return offset;
+}
+
+// ----------------------------------------------------------------- render_stereo
+inline void
+Camera::render_stereo(const World& w, float x, int pixel_offset, const PixelPoints& grid)
+{}
 
 #endif

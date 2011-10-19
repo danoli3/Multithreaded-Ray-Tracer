@@ -13,7 +13,9 @@ Camera::Camera(void)
 		u(1, 0, 0),
 		v(0, 1, 0),
 		w(0, 0, 1),
-		exposure_time(1.0)
+		exposure_time(1.0),
+		stereo(false),
+		offset(0)
 {}
 
 
@@ -27,7 +29,9 @@ Camera::Camera(const Camera& c)
 		u(c.u),
 		v(c.v),
 		w(c.w),
-		exposure_time(c.exposure_time)
+		exposure_time(c.exposure_time),
+		stereo(c.stereo),
+		offset(c.offset)
 {}
 
 
@@ -47,6 +51,8 @@ Camera::operator= (const Camera& rhs) {
 	v				= rhs.v;
 	w				= rhs.w;
 	exposure_time 	= rhs.exposure_time;
+	stereo			= rhs.stereo;
+	offset			= rhs.offset;
 
 	return (*this);
 }
