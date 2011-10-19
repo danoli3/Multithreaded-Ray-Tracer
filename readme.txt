@@ -10,9 +10,14 @@ http://www.raytracegroundup.com/downloads.html
 Project Files
 ----------------------------------------------
 wxRaytracer.NET2003.sln   - Microsoft Visual Studio .NET 2003
-wxRaytracerVCPP2005EE.sln - Microsoft Visual C++ 2005 Express Edition
-wxRaytracerVCPP2008EE.sln - Microsoft Visual C++ 2008 Express Edition
-wxRaytracerVCPP2010EE.sln - Microsoft Visual C++ 2010 Express Edition
+wxRaytracerVCPP2005EE.sln - Microsoft Visual C++ 2005 Express Edition (Also works with Professional, Ultimate)
+wxRaytracerVCPP2008EE.sln - Microsoft Visual C++ 2008 Express Edition (Also works with Professional, Ultimate)
+wxRaytracerVCPP2010EE.sln - Microsoft Visual C++ 2010 Express Edition (Also works with Professional, Ultimate)
+
+Recommendations:
+-Use Visual Studio 2010 for the project as I have optimised the Solution file for faster speeds in Release mode.
+-When rendering an image that is going to take a long time, always use Release mode unless you are debugging a problem, speed increase of 2-4 times in Release.
+-Start your project with this Skeleton as the base if you want Multithreading, else as stated below you can merge them later.
 
 Other Enhancements in the Multithreaded Skeleton:
 ----------------------------------------------
@@ -20,6 +25,8 @@ Other Enhancements in the Multithreaded Skeleton:
 -Pausing/Resuming the render works
 -Queue system to split up screen into Job's
 -Enhanced WxWidgets settings
+
+
 
 
 How to Extend a project built with the original Skeleton?
@@ -41,22 +48,23 @@ Notes on implementation
 Q: ) What's changed from the Original Skeleton?
 A: ) The following files have the main changes from the Skeleton:
 		User Interface/
-		  -wxraytracer.h/cpp
-		  -ShadeRec.h/cpp
+		  -wxraytracer.h/cpp (Interface changes, Queue System added, Multithreading added) 
 		World/
-		  -World.h/cpp
+		  -World.h/cpp (Changes for Multithreading)
 		Utilities/
-		  -ShadeRec.h/cpp
-		  +MultiThread.h
+		  -ShadeRec.h/cpp (Added variables: Sync Variable, Jump and Count used for Samplers over multiple threads)
+		  +MultiThread.h (Multithreading Data structures)
+		  +RandomNumber.h (Wrapper for RandomNumber Generator)
+		  +MTRand.h/cpp (Mersenne twister Random Number Generator)
 		Samplers/
-		  -Sampler.h/cpp
+		  -Sampler.h/cpp (Function changes for Multithreading and RandomNumber generator)
 		Cameras/
-		  -Camera.h/cpp
-		  -Pinhole.h/cpp
+		  -Camera.h/cpp (Added overloaded function for Multithreading)
+		  -Pinhole.h/cpp (As above)
 		Tracers/
-		  -Tracer.h/cpp
-		  -Whitted.h/cpp
-		  -AreaLighting.h/cpp
-		  -RayCast.h/cpp
+		  -Tracer.h/cpp (Added overloaded function for Multithreading)
+		  -Whitted.h/cpp (Added overloaded function for Multithreading)
+		  -AreaLighting.h/cpp (Added overloaded function for Multithreading)
+		  -RayCast.h/cpp (Added overloaded function for Multithreading)
 
 
