@@ -13,6 +13,7 @@
 #include <wx/thread.h>
 #include <wx/menu.h>
 #include <wx/app.h>
+#include <wx/rawbmp.h>
 #include "World.h"
 #include <vector>
 #include "MultiThread.h"
@@ -69,10 +70,12 @@ class tJOB
     void Report(const tJOB::tCOMMANDS& cmd, const wxString& sArg=wxEmptyString, int iArg=0); // report back to parent  
 
     size_t Stacksize();
+
+	std::multimap<tPRIORITY, tJOB> jobs; // multimap to reflect prioritization: values with lower keys come first, newer values with same key are appended
+    
   
   private:
     wxEvtHandler* parent;
-    std::multimap<tPRIORITY, tJOB> jobs; // multimap to reflect prioritization: values with lower keys come first, newer values with same key are appended
     wxMutex mutexQueue;					 // protects queue access
     wxSemaphore queueCount;				 // semaphore count reflects number of queued jobs
 };
@@ -125,6 +128,15 @@ public:
    void OnRenderCompleted( wxCommandEvent& event );
    void OnRenderPause( wxCommandEvent& event );
    void OnRenderResume( wxCommandEvent& event );
+   void OnThreadDefault( wxCommandEvent& event );
+   void OnThreadSingle( wxCommandEvent& event );
+   void OnThreadDual( wxCommandEvent& event );
+   void OnThreadQuad( wxCommandEvent& event );
+   void OnDivisionDefault ( wxCommandEvent& event );
+   void OnDivisionSingle ( wxCommandEvent& event );
+   void OnDivisionDual ( wxCommandEvent& event );
+   void OnDivisionQuad ( wxCommandEvent& event );
+   void OnDivision64 ( wxCommandEvent& event );
 
 private:
    RenderCanvas *canvas; //where the rendering takes place
@@ -140,7 +152,16 @@ enum
    Menu_File_Save,
    Menu_Render_Start,
    Menu_Render_Pause,
-   Menu_Render_Resume
+   Menu_Render_Resume,
+   Menu_Thread_Default,
+   Menu_Thread_Single,
+   Menu_Thread_Dual,
+   Menu_Thread_Quad,
+   Menu_Division_Default,
+   Menu_Division_Single,
+   Menu_Division_Dual,
+   Menu_Division_Quad,
+   Menu_Division_64
 };
 
 class RenderCanvas: public wxScrolledWindow
@@ -173,6 +194,7 @@ public:
    int totalThreads; 
    int threadNumber;
    int divisions;
+   int divisionsNumber;
    World* w;
    RenderThread* manager;
 protected:

@@ -1,11 +1,10 @@
+
+
 #include <wx/wx.h>
 #include <wx/dcbuffer.h>
 #include "wxraytracer.h"
 #include "main.xpm"
 #include "bg.xpm"
-
-
-
 
 DEFINE_EVENT_TYPE(wxEVT_THREAD)
 
@@ -45,13 +44,22 @@ void wxraytracerapp::SetStatusText(const wxString&  text, int number)
 /********************* wxraytracerFrame ***************************************/
 /******************************************************************************/
 
-BEGIN_EVENT_TABLE( wxraytracerFrame, wxFrame )
+BEGIN_EVENT_TABLE( wxraytracerFrame, wxFrame )     
    EVT_MENU( Menu_Render_Start, wxraytracerFrame::OnRenderStart )
    EVT_MENU( Menu_Render_Pause, wxraytracerFrame::OnRenderPause )
    EVT_MENU( Menu_Render_Resume, wxraytracerFrame::OnRenderResume )
    EVT_MENU( Menu_File_Save, wxraytracerFrame::OnSaveFile )
    EVT_MENU( Menu_File_Open, wxraytracerFrame::OnOpenFile )
    EVT_MENU( Menu_File_Quit, wxraytracerFrame::OnQuit )
+   EVT_MENU( Menu_Thread_Default, wxraytracerFrame::OnThreadDefault )
+   EVT_MENU( Menu_Thread_Single, wxraytracerFrame::OnThreadSingle )
+   EVT_MENU( Menu_Thread_Dual, wxraytracerFrame::OnThreadDual )
+   EVT_MENU( Menu_Thread_Quad, wxraytracerFrame::OnThreadQuad )
+   EVT_MENU( Menu_Division_Default, wxraytracerFrame::OnDivisionDefault )
+   EVT_MENU( Menu_Division_Single, wxraytracerFrame::OnDivisionSingle )
+   EVT_MENU( Menu_Division_Dual, wxraytracerFrame::OnDivisionDual )
+   EVT_MENU( Menu_Division_Quad, wxraytracerFrame::OnDivisionQuad )
+   EVT_MENU( Menu_Division_64, wxraytracerFrame::OnDivision64 )
    EVT_COMMAND(ID_RENDER_COMPLETED, wxEVT_RENDER, wxraytracerFrame::OnRenderCompleted)
 END_EVENT_TABLE()
 
@@ -76,10 +84,40 @@ wxraytracerFrame::wxraytracerFrame(const wxPoint& pos, const wxSize& size)
    menuRender->Enable(menuRender->FindItem(wxT("&Start" )), TRUE );
    menuRender->Enable(menuRender->FindItem(wxT("&Pause" )), FALSE);
    menuRender->Enable(menuRender->FindItem(wxT("&Resume")), FALSE);
-   
+
+
+   //---------------------------------------- Multithread menu
+   wxMenu *menuMultithread = new wxMenu;
+
+   menuMultithread->AppendRadioItem(Menu_Thread_Default , wxT("&Thread per system core" ));
+   menuMultithread->AppendRadioItem(Menu_Thread_Single , wxT("&Single Thread" ));
+   menuMultithread->AppendRadioItem(Menu_Thread_Dual, wxT("&Dual Threads"));
+   menuMultithread->AppendRadioItem(Menu_Thread_Quad, wxT("&Quad Threads"));
+
+   menuMultithread->Check(menuMultithread->FindItem(wxT("&Thread per system core" )), TRUE );   
+ 
+
+   //---------------------------------------- Divisions Menu
+
+   wxMenu *menuDivisions = new wxMenu;
+
+   menuDivisions->AppendRadioItem(Menu_Division_Default , wxT("&8x8 Grid" ));
+   menuDivisions->AppendRadioItem(Menu_Division_Single , wxT("&1x1 Grid" ));
+   menuDivisions->AppendRadioItem(Menu_Division_Dual, wxT("&2x2 Grid"));
+   menuDivisions->AppendRadioItem(Menu_Division_Quad, wxT("&4x4 Grid"));
+   menuDivisions->AppendRadioItem(Menu_Division_64, wxT("&64x64 Grid"));
+
+   menuDivisions->Check(menuDivisions->FindItem(wxT("&8x8 Grid" )), TRUE );   
+
+
+   //-------------------------------------- Create the MenuBar
+
    wxMenuBar *menuBar = new wxMenuBar;
    menuBar->Append(menuFile  , wxT("&File"  ));
    menuBar->Append(menuRender, wxT("&Render"));
+   menuBar->Append(menuMultithread, wxT("&Multithreading"));
+   menuBar->Append(menuDivisions, wxT("&Divisions"));
+
    
    SetMenuBar( menuBar );
 
@@ -175,18 +213,113 @@ void wxraytracerFrame::OnOpenFile( wxCommandEvent& WXUNUSED( event ) )
    }
 }
 
+void wxraytracerFrame::OnThreadDefault( wxCommandEvent& WXUNUSED( event ) )
+{
+   wxMenu* menu = GetMenuBar()->GetMenu(2);
+   menu->Check(menu->FindItem(wxT("&Thread per system core" )), TRUE); 
+   
+   canvas->threadNumber = 0;
+}
+
+void wxraytracerFrame::OnThreadSingle( wxCommandEvent& WXUNUSED( event ) )
+{
+   wxMenu* menu = GetMenuBar()->GetMenu(2);   
+   menu->Check(menu->FindItem(wxT("&Single Thread" )), TRUE);   
+   
+   canvas->threadNumber = 1;
+}
+
+void wxraytracerFrame::OnThreadDual( wxCommandEvent& WXUNUSED( event ) )
+{
+   wxMenu* menu = GetMenuBar()->GetMenu(2);
+   menu->Check(menu->FindItem(wxT("&Dual Threads")), TRUE);
+   
+   canvas->threadNumber = 2;
+}
+
+void wxraytracerFrame::OnThreadQuad( wxCommandEvent& WXUNUSED( event ) )
+{
+   wxMenu* menu = GetMenuBar()->GetMenu(2);
+   menu->Check(menu->FindItem(wxT("&Quad Threads")), TRUE);
+   
+   canvas->threadNumber = 4;
+}
+
+
+
+//------------------------------- Divisions
+
+void wxraytracerFrame::OnDivisionDefault( wxCommandEvent& WXUNUSED( event ) )
+{
+   wxMenu* menu = GetMenuBar()->GetMenu(3);
+   menu->Check(menu->FindItem(wxT("&8x8 Grid")), TRUE);
+   
+   canvas->divisionsNumber = 0;
+}
+
+void wxraytracerFrame::OnDivisionSingle( wxCommandEvent& WXUNUSED( event ) )
+{
+   wxMenu* menu = GetMenuBar()->GetMenu(3);
+   menu->Check(menu->FindItem(wxT("&1x1 Grid")), TRUE);
+   
+   canvas->divisionsNumber = 1;
+}
+
+void wxraytracerFrame::OnDivisionDual( wxCommandEvent& WXUNUSED( event ) )
+{
+   wxMenu* menu = GetMenuBar()->GetMenu(3);
+   menu->Check(menu->FindItem(wxT("&2x2 Grid")), TRUE);
+   
+   canvas->divisionsNumber = 2;
+}
+
+
+void wxraytracerFrame::OnDivisionQuad( wxCommandEvent& WXUNUSED( event ) )
+{
+   wxMenu* menu = GetMenuBar()->GetMenu(3);
+   menu->Check(menu->FindItem(wxT("&4x4 Grid")), TRUE);
+   
+   canvas->divisionsNumber = 4;
+}
+
+void wxraytracerFrame::OnDivision64( wxCommandEvent& WXUNUSED( event ) )
+{
+   wxMenu* menu = GetMenuBar()->GetMenu(3);
+   menu->Check(menu->FindItem(wxT("&64x64 Grid")), TRUE);
+   
+   canvas->divisionsNumber = 64;
+}
+
+
+
+
+
 void wxraytracerFrame::OnRenderStart( wxCommandEvent& WXUNUSED( event ) )
 {
    wxMenu* menu = GetMenuBar()->GetMenu(1);
    menu->Enable(menu->FindItem(wxT("&Start" )), FALSE);
    menu->Enable(menu->FindItem(wxT("&Pause" )), TRUE );
    menu->Enable(menu->FindItem(wxT("&Resume")), FALSE);
+   menu->Enable(menu->FindItem(wxT("&Stop")), TRUE);
    
    canvas->renderStart();
    
    wxMenu* menuFile = GetMenuBar()->GetMenu(0);
    menuFile->Enable(menuFile->FindItem(wxT( "&Open..."   )), FALSE);
    menuFile->Enable(menuFile->FindItem(wxT( "&Save As...")), TRUE );
+
+   wxMenu* menuThread = GetMenuBar()->GetMenu(2);
+   menuThread->Enable(menuThread->FindItem(wxT("&Thread per system core" )), FALSE );
+   menuThread->Enable(menuThread->FindItem(wxT("&Single Thread" )), FALSE);
+   menuThread->Enable(menuThread->FindItem(wxT("&Dual Threads")), FALSE);
+   menuThread->Enable(menuThread->FindItem(wxT("&Quad Threads")), FALSE);
+
+   wxMenu* menuDivision = GetMenuBar()->GetMenu(3);
+   menuDivision->Enable(menuDivision->FindItem(wxT("&8x8 Grid" )), FALSE );
+   menuDivision->Enable(menuDivision->FindItem(wxT("&1x1 Grid" )), FALSE);
+   menuDivision->Enable(menuDivision->FindItem(wxT("&2x2 Grid")), FALSE);
+   menuDivision->Enable(menuDivision->FindItem(wxT("&4x4 Grid")), FALSE);
+   menuDivision->Enable(menuDivision->FindItem(wxT("&64x64 Grid")), FALSE);
 }
 
 void wxraytracerFrame::OnRenderCompleted( wxCommandEvent& event )
@@ -195,9 +328,24 @@ void wxraytracerFrame::OnRenderCompleted( wxCommandEvent& event )
    menu->Enable(menu->FindItem(wxT("&Start" )), TRUE );
    menu->Enable(menu->FindItem(wxT("&Pause" )), FALSE);
    menu->Enable(menu->FindItem(wxT("&Resume")), FALSE);
+   menu->Enable(menu->FindItem(wxT("&Stop")), FALSE);
+
+   wxMenu* menuThread = GetMenuBar()->GetMenu(2);
+   menuThread->Enable(menuThread->FindItem(wxT("&Thread per system core" )), TRUE );
+   menuThread->Enable(menuThread->FindItem(wxT("&Single Thread" )), TRUE);
+   menuThread->Enable(menuThread->FindItem(wxT("&Dual Threads")), TRUE);
+    menuThread->Enable(menuThread->FindItem(wxT("&Quad Threads")), TRUE);
+
+   wxMenu* menuDivision = GetMenuBar()->GetMenu(3);
+   menuDivision->Enable(menuDivision->FindItem(wxT("&8x8 Grid" )), TRUE );
+   menuDivision->Enable(menuDivision->FindItem(wxT("&1x1 Grid" )), TRUE );
+   menuDivision->Enable(menuDivision->FindItem(wxT("&2x2 Grid")), TRUE );
+   menuDivision->Enable(menuDivision->FindItem(wxT("&4x4 Grid")), TRUE );
+   menuDivision->Enable(menuDivision->FindItem(wxT("&64x64 Grid")), TRUE );
    
    wxMenu* menuFile = GetMenuBar()->GetMenu(0);
    menuFile->Enable(menuFile->FindItem(wxT("&Open...")), TRUE);
+
    
    wxGetApp().SetStatusText(wxT("Rendering complete"));
 }
@@ -287,9 +435,11 @@ void WorkerThread::OnJob()
 		queue->Report(tJOB::eID_THREAD_JOB, wxString::Format(wxT("Ending #%s Thread."), job.arg.c_str()), id);
 		//Sleep(1000); // wait a while
         throw tJOB::eID_THREAD_EXIT; // confirm exit command
-      case tJOB::eID_THREAD_JOB: // process a standard job		
-		world->camera_ptr->render_scene(*world, job.theJob); // Render Camera based scene		
-		//world->render_scene(job.theJob);					 // Orthographic render:
+      case tJOB::eID_THREAD_JOB: // process a standard job	
+		if(world->camera_ptr != NULL)
+			world->camera_ptr->render_scene(*world, job.theJob); // Render Camera based scene		
+		else
+			world->render_scene(job.theJob);					 // Orthographic render:
         queue->Report(tJOB::eID_THREAD_JOB, wxString::Format(wxT("Job #%s done."), job.arg.c_str()), id); // report successful completion
         break;
       case tJOB::eID_THREAD_JOBERR: // process a job that terminates with an error
@@ -298,6 +448,7 @@ void WorkerThread::OnJob()
         throw tJOB::eID_THREAD_EXIT; // report exit of worker thread
         break;
       case tJOB::eID_THREAD_NULL: // dummy command
+	  case tJOB::eID_THREAD_STARTED:
       default: break; // default
       } // switch(job.cmd)
     } // virtual void OnJob()
@@ -308,7 +459,7 @@ void WorkerThread::OnJob()
 
 RenderCanvas::RenderCanvas(wxWindow *parent)
    : wxScrolledWindow(parent), theImage(NULL), w(NULL), timer(NULL), updateTimer(this, ID_RENDER_UPDATE), totalThreads(1),
-   threads(NULL), queue(NULL), threadNumber(0), divisions(0), manager(NULL), theThreads(NULL)
+   threads(NULL), queue(NULL), threadNumber(0), divisions(0), divisionsNumber(0), manager(NULL), theThreads(NULL)
 {
    SetOwnBackgroundColour(wxColour(143,144,150));
    queue=new Queue(this);
@@ -381,12 +532,15 @@ void RenderCanvas::OnDraw(wxDC& dc)
 }
 
 void RenderCanvas::OnRenderCompleted( wxCommandEvent& event )
-{	  
-	 
-	   
-
-	   OnQuit();
+{	   
+	  wxGetApp().SetStatusText( wxT( "Render Completed: Cleaning up memory" ) );
+	  OnQuit();
    
+	  if(manager != NULL)
+	   {	manager->Delete();
+			delete manager;
+			manager = NULL; }
+
 	   if(w != NULL)
 	   {  delete w;
 		  w = NULL; }
@@ -412,10 +566,8 @@ void RenderCanvas::OnRenderCompleted( wxCommandEvent& event )
 		  timer = NULL;
 	   }
 
-	   if(manager != NULL)
-	   {	manager->Delete();
-			delete manager;
-			manager = NULL; }	
+	    wxGetApp().SetStatusText( wxT( "Render Completed" ) );
+	   	
 }
 
 void RenderCanvas::OnNewPixel( wxCommandEvent& event )
@@ -525,7 +677,7 @@ void RenderCanvas::OnTimerUpdate( wxTimerEvent& event )
    else
       wxGetApp().SetStatusText( timeString, 1);
 
-   if(completed == 1)  // If we have reached 1 (100%) render call completed
+   if(completed >= 1)  // If we have reached 1 (100%) render call completed
    {
 	   wxCommandEvent event(wxEVT_RENDER, ID_RENDER_COMPLETED);   
 	   this->GetEventHandler()->AddPendingEvent(event);   
@@ -543,11 +695,20 @@ void RenderCanvas::renderStart(void)
     w->build();
     wxGetApp().SetStatusText( wxT( "Rendering..." ) );
    
-    pixelsRendered = 0;
-    pixelsToRender = w->vp.hres * w->vp.vres;
+  	int hres = w->vp.hres;
+	int vres = w->vp.vres;
+	int offset = 0;
+	if(w->camera_ptr->get_stereo() == true)
+	{	hres = hres * 2;
+		offset = w->camera_ptr->get_offset();
+		hres += offset;
+	}
+
+	pixelsRendered = 0;
+    pixelsToRender = hres * vres;
    
     //set the background
-    wxBitmap bitmap(w->vp.hres, w->vp.vres, -1);
+    wxBitmap bitmap(hres, vres, -1);
     wxMemoryDC dc;
     dc.SelectObject(bitmap);
     dc.SetBackground(*wxGREY_BRUSH);
@@ -555,9 +716,9 @@ void RenderCanvas::renderStart(void)
    
     wxBitmap tile(bg_xpm);
    
-    for(int x = 0; x < w->vp.hres; x += 16)
+    for(int x = 0; x < hres; x += 16)
     {
-       for(int y = 0; y < w->vp.vres; y += 16)
+       for(int y = 0; y < vres; y += 16)
           dc.DrawBitmap(tile, x, y, FALSE);
     }
    
@@ -568,7 +729,8 @@ void RenderCanvas::renderStart(void)
 
     updateTimer.Start(250);
  
-    timer = new wxStopWatch();  //start timer  
+    timer = new wxStopWatch();  //start timer 
+
     totalThreads = wxThread::GetCPUCount(); // get the total amout of cores for the system
     if(threadNumber == 0)
 		threadNumber = totalThreads;        			
@@ -579,7 +741,12 @@ void RenderCanvas::renderStart(void)
 	manager->SetPriority(30);
 	w->paintArea = manager;				// Threads communicate with the manager via the World
 
-	divisions = 8;  // 8 is a nice multiple of 2
+	if(divisionsNumber == 0)
+		divisions = 8;  // 8 is a nice multiple of 2
+	else
+		divisions = divisionsNumber;
+	// else division will be what is set.
+
 	int jobWidth = w->vp.hres / divisions;
 	int jobHeight =  w->vp.vres / divisions;
 	float xRemainder = w->vp.hres % divisions;
@@ -600,7 +767,9 @@ void RenderCanvas::renderStart(void)
 		}
 
 	}	
-	if(yRemainder != 0)	
+	
+
+	if(yRemainder != 0)
 	{		int iJob = rand();
 			PixelPoints current;
 			current.origin.x = 0; current.origin.y = w->vp.vres - yRemainder;
@@ -614,6 +783,8 @@ void RenderCanvas::renderStart(void)
 			current.end.x = w->vp.hres; current.end.y = w->vp.vres;
 			queue->AddJob(tJOB(tJOB::eID_THREAD_JOB, wxString::Format(wxT("%u"), iJob), current)); 
 	}
+	
+
 	//threadNumber = divisions*divisions;		// make the number of threads the number of jobs
 	//threadNumber = 4;							// simulate quad core cpu
 	//threadNumber = 2;							// simulate dual core cpu
