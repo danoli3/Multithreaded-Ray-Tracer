@@ -25,8 +25,8 @@ Other Enhancements in the Multithreaded Skeleton:
 -Pausing/Resuming the render works
 -Queue system to split up screen into Job's
 -Enhanced WxWidgets settings
-
-
+-Mersenne Twister Random Number Generator
+-SmartPointer and Reference Counting for Memory Management of some Pointers.
 
 
 How to Extend a project built with the original Skeleton?
@@ -48,7 +48,7 @@ Notes on implementation
 Q: ) What's changed from the Original Skeleton?
 A: ) The following files have the main changes from the Skeleton:
 		User Interface/
-		  -wxraytracer.h/cpp (Interface changes, Queue System added, Multithreading added) 
+		  -wxraytracer.h/cpp (Interface changes, Queue System added, Multithreading added, fixed crashes) 
 		World/
 		  -World.h/cpp (Changes for Multithreading)
 		Utilities/
@@ -56,6 +56,8 @@ A: ) The following files have the main changes from the Skeleton:
 		  +MultiThread.h (Multithreading Data structures)
 		  +RandomNumber.h (Wrapper for RandomNumber Generator)
 		  +MTRand.h/cpp (Mersenne twister Random Number Generator)
+		  +SmartPointer.h (SmartPointer Template)
+		  +ReferenceCount.h (ReferenceCount class to be used by the SmartPointer)
 		Samplers/
 		  -Sampler.h/cpp (Function changes for Multithreading and RandomNumber generator)
 		Cameras/
