@@ -4,8 +4,9 @@
 #include "World.h"			// required for the shade function in all derived classes
 #include "RGBColor.h"
 #include "ShadeRec.h"
+#include "ReferenceCount.h"
 
-class Material {	
+class Material : public ReferenceCount {	
 	public:
 	
 		Material(void);						

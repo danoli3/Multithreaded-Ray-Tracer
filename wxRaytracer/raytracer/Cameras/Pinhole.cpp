@@ -121,9 +121,12 @@ Pinhole::render_scene(const World& w, const PixelPoints& grid)
 	for (int r = grid.origin.y; r < grid.end.y; r++)
 	{// up
 		for (int c = grid.origin.x; c < grid.end.x; c++) {		// across 					
-			L = black; 			
+			L = black; 		
+			//int sp_count = 0;
+			//int sp_jump = 0;
 			for (int p = 0; p < n; p++)			// up pixel
 				for (int q = 0; q < n; q++) {	// across pixel
+					//sp = vp.sampler_ptr->sample_unit_square(sp_count, sp_jump); // for when you use the sampler	
 					pp.x = vp.s * (c - 0.5 * vp.hres + (q + 0.5) / n); 
 					pp.y = vp.s * (r - 0.5 * vp.vres + (p + 0.5) / n);
 					ray.d = get_direction(pp);
@@ -136,6 +139,10 @@ Pinhole::render_scene(const World& w, const PixelPoints& grid)
 			pixel.color = L;			// for send every row
 			pixel.xy = Point2D(c,r);	// "
 			render.push_back(pixel);    // "
+			if(w.StopRendering())       // if the program is asked to close, we need end this now
+			{	w.display_pixel(render);  
+					render.clear();	
+					return;	}
 		//w.display_pixel(r, c, L);   // send to the screen buffer every pixel rendered
 		} 
 		w.display_pixel(render);   // send to the screen buffer every row of pixels rendered

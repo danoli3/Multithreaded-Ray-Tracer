@@ -10,16 +10,20 @@ class Lambertian: public BRDF {
 		
 		Lambertian(const Lambertian& lamb);
 		
-		virtual Lambertian*
-		clone(void) const;
-		
-		~Lambertian(void);
-		
 		Lambertian& 
 		operator= (const Lambertian& rhs);
 		
+		virtual
+		~Lambertian(void);
+		
+		virtual Lambertian*
+		clone(void) const;
+		
 		virtual RGBColor
 		f(const ShadeRec& sr, const Vector3D& wo, const Vector3D& wi) const;
+		
+		virtual RGBColor												
+		sample_f(ShadeRec& sr, const Vector3D& wo, Vector3D& wi, float& pdf);
 		
 		virtual RGBColor
 		rho(const ShadeRec& sr, const Vector3D& wo) const;

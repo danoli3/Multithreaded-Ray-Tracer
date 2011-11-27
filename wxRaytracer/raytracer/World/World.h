@@ -11,7 +11,6 @@
 //	 	the Tracer base class contains a pointer to the world. If we wrote a correct copy constructor for the 
 // 	  	Tracer class, the World copy construtor would call itself recursively until we ran out of memory. 
 
-
 #include <vector>
 #include <list>
 
@@ -20,18 +19,19 @@
 #include "Tracer.h"
 #include "GeometricObject.h"
 #include "Sphere.h"
-#include "Ray.h"
 #include "SingleSphere.h"
-
+#include "Ray.h"
+#include "MultiThread.h"
+#include "ReferenceCount.h"
+#include "SmartPointer.h"
 #include "Camera.h"
 #include "Light.h"
 #include "Ambient.h"
-
-
+ 
 using namespace std;
 
 class RenderThread; 	//part of skeleton - wxRaytracer.h
-
+class Image;
 
 class World {	
 	public:
@@ -42,16 +42,13 @@ class World {
 		Light*   					ambient_ptr;
 		Camera*						camera_ptr;		
 		Sphere 						sphere;		// for Chapter 3 only
-		vector<GeometricObject*>	objects;		
+		vector<SmartPointer<GeometricObject>> objects;		
 		vector<Light*> 				lights;
 		
-		RenderThread* 				paintArea; 	//connection to skeleton - wxRaytracer.h
-			
+		RenderThread* 				paintArea; 	//connection to skeleton - wxRaytracer.h			
 
 	public:
-	
-		World(void);												
-		
+		World(void);
 		~World();
 								
 		void 
@@ -89,7 +86,9 @@ class World {
 
 		ShadeRec
 		hit_objects(const Ray& ray);
-		
+
+		bool
+		StopRendering() const; // used to stop rendering threads OnQuit
 						
 	private:
 		
@@ -116,19 +115,25 @@ World::add_light(Light* light_ptr) {
 	lights.push_back(light_ptr);
 }
 
-
 // ------------------------------------------------------------------ set_ambient_light
-
 inline void
 World::set_ambient_light(Light* light_ptr) {
+	if(ambient_ptr)
+	{
+		delete ambient_ptr;
+		ambient_ptr = NULL;
+	}
 	ambient_ptr = light_ptr;
 }
 
-
 // ------------------------------------------------------------------ set_camera
-
 inline void
 World::set_camera(Camera* c_ptr) {
+	if(camera_ptr)
+	{
+		delete camera_ptr;
+		camera_ptr = NULL;
+	}
 	camera_ptr = c_ptr;
 }
 

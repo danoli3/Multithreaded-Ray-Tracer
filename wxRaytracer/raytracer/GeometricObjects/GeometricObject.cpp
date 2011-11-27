@@ -18,7 +18,7 @@ GeometricObject::GeometricObject(void)
 GeometricObject::GeometricObject (const GeometricObject& object) {
 	if(object.material_ptr)
 		material_ptr = object.material_ptr->clone(); 
-	else  material_ptr = NULL;
+	//else  material_ptr = NULL;
 }	
 
 
@@ -29,11 +29,7 @@ GeometricObject::operator= (const GeometricObject& rhs) {
 	if (this == &rhs)
 		return (*this);
 			
-	if (material_ptr) {
-		delete material_ptr;
-		material_ptr = NULL;
-	}
-
+	// Material Deletion handled by the SmartPointer
 	if (rhs.material_ptr)
 		material_ptr = rhs.material_ptr->clone();
 
@@ -44,10 +40,7 @@ GeometricObject::operator= (const GeometricObject& rhs) {
 // ---------------------------------------------------------------------- destructor
 
 GeometricObject::~GeometricObject (void) {	
-	if (material_ptr) {
-		delete material_ptr;
-		material_ptr = NULL;
-	}
+	// Material Deletion handled by the SmartPointer
 }
 
 
@@ -58,5 +51,18 @@ GeometricObject::set_material(Material* mPtr) {
 	material_ptr = mPtr;
 }
 
+void 
+GeometricObject::set_material(SmartPointer<Material> mPtr) {
+	material_ptr = mPtr;
+}
+
+// ---------------------------------------------------------------------- add_object
+// required for Compound objects 
+
+void 												
+GeometricObject::add_object(GeometricObject* object_ptr) {}
+
+void 												
+GeometricObject::add_object(SmartPointer<GeometricObject> object_ptr) {}
 
 								

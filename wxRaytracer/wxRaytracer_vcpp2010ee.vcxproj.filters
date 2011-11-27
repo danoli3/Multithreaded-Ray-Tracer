@@ -272,5 +272,11 @@
     <ClInclude Include="raytracer\Utilities\RandomNumber.h">
       <Filter>Utilities</Filter>
     </ClInclude>
+    <ClInclude Include="raytracer\Utilities\ReferenceCount.h">
+      <Filter>Utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="raytracer\Utilities\SmartPointer.h">
+      <Filter>Utilities</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

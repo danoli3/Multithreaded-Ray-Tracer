@@ -16,10 +16,11 @@
 #include "Maths.h"
 #include "ShadeRec.h"
 #include "RandomNumber.h"
+#include "ReferenceCount.h"
 
 using namespace std;
 
-class Sampler {	
+class Sampler : public ReferenceCount {	
 	public:	
 		
 		Sampler(void);								

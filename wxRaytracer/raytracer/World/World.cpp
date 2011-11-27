@@ -1,3 +1,4 @@
+
 // this file contains the definition of the World class
 
 #include "wxraytracer.h"
@@ -26,6 +27,7 @@
 
 // materials
 
+#include "Material.h"
 #include "Matte.h"
 
 // utilities
@@ -55,10 +57,7 @@ World::World(void)
 		camera_ptr(NULL)
 {}
 
-
-
 //------------------------------------------------------------------ destructor
-
 World::~World(void) {	
 	
 	if(tracer_ptr) {
@@ -79,14 +78,10 @@ World::~World(void) {
 	}
 	
 	delete_objects();	
-	delete_lights();				
+	delete_lights();	
 }
 
-
 //------------------------------------------------------------------ render_scene
-
-// This uses orthographic viewing along the zw axis
-
 void 												
 World::render_scene(void) const {
 
@@ -139,10 +134,7 @@ World::render_scene(const PixelPoints& grid) const {
 		display_pixel(render);   // send to the screen buffer every row of pixels rendered
 		render.clear();		       // "
 	}
-
 }  
-
-
 
 // ------------------------------------------------------------------ clamp
 
@@ -156,7 +148,6 @@ World::max_to_one(const RGBColor& c) const  {
 		return (c);
 }
 
-
 // ------------------------------------------------------------------ clamp_to_color
 // Set color to red if any component is greater than one
 
@@ -166,11 +157,9 @@ World::clamp_to_color(const RGBColor& raw_color) const {
 	
 	if (raw_color.r > 1.0 || raw_color.g > 1.0 || raw_color.b > 1.0) {
 		c.r = 1.0; c.g = 0.0; c.b = 0.0;
-	}
-		
+	}		
 	return (c);
 }
-
 
 // ---------------------------------------------------------------------------display_pixel
 // raw_color is the pixel color computed by the ray tracer
@@ -204,7 +193,7 @@ World::display_pixel(const int row, const int column, const RGBColor& raw_color)
                              (int)(mapped_color.b * 255));
 }
 
-//------------------------------------------------------------- overloaded display_pixel for multithreaded
+
 void
 World::display_pixel(const list<RenderedPixel>& render) const {
 	
@@ -266,33 +255,30 @@ World::hit_objects(const Ray& ray) {
 		sr.t = tmin;
 		sr.normal = normal;
 		sr.local_hit_point = local_hit_point;
-	}
-		
+	}		
 	return(sr);   
 }
 
-
-
 //------------------------------------------------------------------ delete_objects
-
 // Deletes the objects in the objects array, and erases the array.
 // The objects array still exists, because it's an automatic variable, but it's empty 
-
 void
 World::delete_objects(void) {
 	int num_objects = objects.size();
 	
 	for (int j = 0; j < num_objects; j++) {
-		delete objects[j];
-		objects[j] = NULL;
-	}	
-	
+		// This is the code that was used before the SmartPointer.
+		//delete objects[j];
+		//objects[j] = NULL;
+		// Now we can call an Explicit Delete on the Stored Object (However it is not nessessary).
+		objects[j].Delete();
+		
+	}		
 	objects.erase (objects.begin(), objects.end());
+
 }
 
-
 //------------------------------------------------------------------ delete_lights
-
 void
 World::delete_lights(void) {
 	int num_lights = lights.size();
@@ -303,5 +289,14 @@ World::delete_lights(void) {
 	}	
 	
 	lights.erase (lights.begin(), lights.end());
+}
+
+bool
+World::StopRendering() const
+{
+	if(paintArea != NULL)
+		return paintArea->Stop();
+	else
+		return true;
 }
 

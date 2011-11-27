@@ -427,30 +427,32 @@ wxThread::ExitCode WorkerThread::Entry()
     } // virtual wxThread::ExitCode Entry()
 
 void WorkerThread::OnJob()
-    {
-      tJOB job = queue->Pop(); // pop a job from the queue. this will block the worker thread if queue is empty
-      switch(job.cmd)
-      {
-      case tJOB::eID_THREAD_EXIT: // thread should exit	
-		queue->Report(tJOB::eID_THREAD_JOB, wxString::Format(wxT("Ending #%s Thread."), job.arg.c_str()), id);
-		//Sleep(1000); // wait a while
-        throw tJOB::eID_THREAD_EXIT; // confirm exit command
-      case tJOB::eID_THREAD_JOB: // process a standard job	
-		if(world->camera_ptr != NULL)
-			world->camera_ptr->render_scene(*world, job.theJob); // Render Camera based scene		
-		else
-			world->render_scene(job.theJob);					 // Orthographic render:
-        queue->Report(tJOB::eID_THREAD_JOB, wxString::Format(wxT("Job #%s done."), job.arg.c_str()), id); // report successful completion
-        break;
-      case tJOB::eID_THREAD_JOBERR: // process a job that terminates with an error
-        queue->Report(tJOB::eID_THREAD_JOB, wxString::Format(wxT("Job #%s errorneous."), job.arg.c_str()), id);
-        //Sleep(1000);
-        throw tJOB::eID_THREAD_EXIT; // report exit of worker thread
-        break;
-      case tJOB::eID_THREAD_NULL: // dummy command
-	  case tJOB::eID_THREAD_STARTED:
-      default: break; // default
-      } // switch(job.cmd)
+    { 
+	  while(!TestDestroy()) //while this thread is not asked to be destroyed
+	  {
+		  tJOB job = queue->Pop(); // pop a job from the queue. this will block the worker thread if queue is empty
+		  switch(job.cmd)
+		  {
+		  case tJOB::eID_THREAD_EXIT: // thread should exit	
+			queue->Report(tJOB::eID_THREAD_JOB, wxString::Format(wxT("Ending #%s Thread."), job.arg.c_str()), id);
+			//Sleep(1000); // wait a while
+			throw tJOB::eID_THREAD_EXIT; // confirm exit command
+		  case tJOB::eID_THREAD_JOB: // process a standard job	
+			if(world->camera_ptr != NULL)
+				world->camera_ptr->render_scene(*world, job.theJob); // Render Camera based scene		
+			else
+				world->render_scene(job.theJob);					 // Orthographic render:
+			queue->Report(tJOB::eID_THREAD_JOB, wxString::Format(wxT("Job #%s done."), job.arg.c_str()), id); // report successful completion
+			break;
+		  case tJOB::eID_THREAD_JOBERR: // process a job that terminates with an error
+			queue->Report(tJOB::eID_THREAD_JOB, wxString::Format(wxT("Job #%s errorneous."), job.arg.c_str()), id);
+			//Sleep(1000);
+			throw tJOB::eID_THREAD_EXIT; // report exit of worker thread
+			break;
+		  case tJOB::eID_THREAD_NULL: // dummy command
+		  default: break; // default
+		  } // switch(job.cmd)
+	  }
     } // virtual void OnJob()
 
 /******************************************************************************/
@@ -468,7 +470,14 @@ RenderCanvas::RenderCanvas(wxWindow *parent)
 RenderCanvas::~RenderCanvas(void)
 {	// Double check we are not leaving anything behind in memory
 
-    renderPause(); 
+	if(!threads.empty())
+	{  for(size_t t=0; t<threads.size(); ++t) 
+			queue->AddJob(tJOB(tJOB::eID_THREAD_EXIT, wxEmptyString), Queue::eHIGHEST); // send all running threads the "EXIT" signal
+	} 
+	if(manager != NULL)
+		manager->StopRendering();
+
+
 	if(queue != NULL)
 	{   if(threads.size() != 0)
 			OnQuit();
@@ -477,7 +486,8 @@ RenderCanvas::~RenderCanvas(void)
 		queue = NULL; }	
 		
 	if(manager != NULL)
-    {	delete manager;
+    {	manager->Delete();
+		delete manager;
 		manager = NULL; 
 	}
 
@@ -867,7 +877,9 @@ void RenderCanvas::OnThread(wxCommandEvent& event) // handler for thread notific
 }
 
 void RenderCanvas::OnQuit()
-{	if(!threads.empty())
+{		
+	
+	if(!threads.empty())
 	{  for(size_t t=0; t<threads.size(); ++t) 
 			queue->AddJob(tJOB(tJOB::eID_THREAD_EXIT, wxEmptyString), Queue::eHIGHEST); // send all running threads the "EXIT" signal
 	} 
@@ -882,7 +894,10 @@ void RenderCanvas::OnQuit()
 			{
 				if((*iter) != NULL)
 				{		
-					theThreads.pop_back();				
+					//(*iter)->Delete();
+					//delete (*iter);
+					//(*iter) = NULL;
+					theThreads.pop_back();						
 				}
 			}
 			theThreads.clear();
@@ -946,17 +961,28 @@ void RenderThread::NotifyCanvas()
    wxCommandEvent event(wxEVT_RENDER, ID_RENDER_NEWPIXEL);
    event.SetClientData(pixelsUpdate);
    canvas->GetEventHandler()->AddPendingEvent(event);
+
    mutex.Unlock();
 }
 
 void RenderThread::OnExit()
-{
-   NotifyCanvas(); // Make sure we have sent all our pixels
-   
+{        
+   pixels.clear();   
+
    if(timer != NULL)
    {   delete timer;
 	   timer = NULL;
    }
+}
+
+bool RenderThread::Stop() const
+{
+   return stop;
+}
+
+void RenderThread::StopRendering()
+{
+	stop = true;
 }
 
 void *RenderThread::Entry()
@@ -965,8 +991,8 @@ void *RenderThread::Entry()
 	timer = new wxStopWatch();
 
 	while(!TestDestroy())
-	{   wxThread::Sleep(50); // Sleep for 50 milliseconds
-		NotifyCanvas();	     // Send pixels to canvas
+	{   NotifyCanvas();	     // Send pixels to canvas
+		wxThread::Sleep(50); // Sleep for 50 milliseconds		
 	}
 	return NULL;
 }

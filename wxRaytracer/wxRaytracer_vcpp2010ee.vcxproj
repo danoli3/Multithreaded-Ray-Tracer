@@ -193,6 +193,8 @@
     <ClInclude Include="raytracer\Samplers\Sampler.h" />
     <ClInclude Include="raytracer\Utilities\MTRand.h" />
     <ClInclude Include="raytracer\Utilities\RandomNumber.h" />
+    <ClInclude Include="raytracer\Utilities\ReferenceCount.h" />
+    <ClInclude Include="raytracer\Utilities\SmartPointer.h" />
     <ClInclude Include="raytracer\World\ViewPlane.h" />
     <ClInclude Include="raytracer\World\World.h" />
     <ClInclude Include="raytracer\Utilities\Constants.h" />

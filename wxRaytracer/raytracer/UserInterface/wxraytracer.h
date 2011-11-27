@@ -18,6 +18,8 @@
 #include <vector>
 #include "MultiThread.h"
 
+//#include "vld.h" // Memory Leak Detection // http://vld.codeplex.com/
+
 #include <stdlib.h>
 #include <assert.h>
 #include <map>
@@ -239,17 +241,20 @@ DECLARE_EVENT_TYPE(wxEVT_RENDER, -1)
 class RenderThread : public wxThread
 {
 public:
-   RenderThread(RenderCanvas* c) : wxThread(wxTHREAD_JOINABLE), canvas(c), timer(NULL) {}
+   RenderThread(RenderCanvas* c) : wxThread(wxTHREAD_JOINABLE), canvas(c), timer(NULL), stop(false) {}
    virtual void *Entry();
    virtual void OnExit();
    virtual void setPixel(int x, int y, int red, int green, int blue);
    virtual void setPixel(const list<RenderedInt>& rendered);
+   virtual bool Stop() const;
+   virtual void StopRendering();
 private:
    void NotifyCanvas();
    RenderCanvas* canvas;   
    vector<RenderPixel*> pixels;
    long lastUpdateTime; 
    wxStopWatch* timer;
+   bool stop;
 
    wxMutex mutex;
 };

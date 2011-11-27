@@ -39,8 +39,7 @@ class Matte: public Material {
 		virtual RGBColor										
 		shade(ShadeRec& sr);
 		
-	private:
-		
+	private:		
 		Lambertian*		ambient_brdf;
 		Lambertian*		diffuse_brdf;
 };

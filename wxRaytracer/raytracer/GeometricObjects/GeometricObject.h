@@ -1,16 +1,19 @@
 #ifndef __GEOMETRIC_OBJECT__
 #define __GEOMETRIC_OBJECT__
-
-class Material;
 	
 #include "Point3D.h"
 #include "Ray.h"
 #include "ShadeRec.h"
 
+#include "ReferenceCount.h"
+#include "SmartPointer.h"
+
+class Material;
+
 
 //----------------------------------------------------------------------------------------------------- Class GeometricObject
 
-class GeometricObject {	
+class GeometricObject : public ReferenceCount {	
 	
 	public:	
 
@@ -31,13 +34,22 @@ class GeometricObject {
 		get_material(void) const;
 
 		virtual void 							// needs to virtual so that it can be overriden in Compound
-		set_material(Material* mPtr); 			
+		set_material(Material* mPtr); 			// It therefore shouldn't be inlined
+		
+		virtual void 
+		set_material(SmartPointer<Material> mPtr); 			// It therefore shouldn't be inlined
+		
+
+		virtual void 										// required for compound objects
+		add_object(GeometricObject* object_ptr);
+
+		virtual void 										// required for compound objects
+		add_object(SmartPointer<GeometricObject> object_ptr);
 
 	
 	protected:
-	
-		mutable Material*   material_ptr;   	// mutable allows Compound::hit, Instance::hit and Grid::hit to assign to material_ptr. hit functions are const
-	
+		SmartPointer<Material>   material_ptr;  
+		
 		GeometricObject&						// assignment operator
 		operator= (const GeometricObject& rhs);
 };
@@ -47,7 +59,7 @@ class GeometricObject {
 
 inline Material* 
 GeometricObject::get_material(void) const {
-	return (material_ptr);
+	return (material_ptr.Get());
 }
 
 #endif
