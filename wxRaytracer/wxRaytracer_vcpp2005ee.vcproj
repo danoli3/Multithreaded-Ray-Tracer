@@ -424,6 +424,30 @@
 				RelativePath=".\raytracer\Utilities\Vector3D.h"
 				>
 			</File>
+			<File
+				RelativePath=".\raytracer\Utilities\MTRand.h"
+				>
+			</File>
+			<File
+				RelativePath=".\raytracer\Utilities\MTRand.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\raytracer\Utilities\RandomNumber.h"
+				>
+			</File>
+			<File
+				RelativePath=".\raytracer\Utilities\MultiThread.h"
+				>
+			</File>
+			<File
+				RelativePath=".\raytracer\Utilities\SmartPointer.h"
+				>
+			</File>
+			<File
+				RelativePath=".\raytracer\Utilities\ReferenceCount.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="User Interface"
