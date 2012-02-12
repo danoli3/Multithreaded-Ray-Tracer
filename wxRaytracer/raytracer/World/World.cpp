@@ -54,7 +54,9 @@ World::World(void)
 	:  	background_color(black),
 		tracer_ptr(NULL),
 		ambient_ptr(new Ambient),
-		camera_ptr(NULL)
+		camera_ptr(NULL),
+		random(new RandomNumber())
+
 {}
 
 //------------------------------------------------------------------ destructor
@@ -75,6 +77,11 @@ World::~World(void) {
 	if (camera_ptr) {
 		delete camera_ptr;
 		camera_ptr = NULL;
+	}
+
+	if (random) {
+		delete random;
+		random = NULL;
 	}
 	
 	delete_objects();	
@@ -102,10 +109,10 @@ World::render_scene(void) const {
 		}	
 }  
 
-// This uses orthographic viewing along the zw axis
+// This uses orthographic viewing along the zw axis (Multithreaded)
 
 void 												
-World::render_scene(const PixelPoints& grid) const {
+World::render_scene(const std::vector<Pixel>& pixels) const {
 
 	RGBColor	pixel_color;	 	
 	Ray			ray;					
@@ -122,18 +129,39 @@ World::render_scene(const PixelPoints& grid) const {
 
 	ray.d = Vector3D(0, 0, -1);
 	
-	for (int r = grid.origin.y; r < grid.end.y; r++) {// up
-		for (int c = grid.origin.x; c < grid.end.x; c++) { // aross				
-			ray.o = Point3D(s * (c - hres / 2.0 + 0.5), s * (r - vres / 2.0 + 0.5), zw);
+	for(int i = 0; i< pixels.size(); i++)
+	{			
+			Pixel screen_pixel = pixels[i];		
+			ray.o = Point3D(s * (screen_pixel.x - hres / 2.0 + 0.5), s * (screen_pixel.y - vres / 2.0 + 0.5), zw);
 			pixel_color = tracer_ptr->trace_ray(ray, depth, count, jump);
 			pixel.color = pixel_color;			// for send every row
-			pixel.xy = Point2D(c,r);	// "
+			pixel.xy = Point2D(screen_pixel.x,screen_pixel.y);	// "
 			render.push_back(pixel);    // "
-			//display_pixel(r, c, pixel_color);
-		}	
-		display_pixel(render);   // send to the screen buffer every row of pixels rendered
-		render.clear();		       // "
-	}
+
+				if(stop_rendering())       // if the program is asked to close, we need end this now
+				{	display_pixel(render);  
+					render.clear();	
+					return; 	}	
+
+				if(render_display() == EVERY_PIXEL)
+				{	display_pixel(render);   // send to the screen buffer every pixel rendered
+					render.clear();	
+				}
+				else if(render_display() == EVERY_ROW)
+				{	
+					if(i % (pixels.size()/10) == 0)
+					{
+						display_pixel(render);   // send to the screen buffer every pixel rendered
+						render.clear();	
+					}
+				}
+	}	
+	if(render_display() == EVERY_JOB || render_display() == EVERY_ROW)
+	{	display_pixel(render);   // send to the screen buffer every row of pixels rendered
+		render.clear();	
+	}		
+
+	
 }  
 
 // ------------------------------------------------------------------ clamp
@@ -238,7 +266,7 @@ World::hit_objects(const Ray& ray) {
 	double		t;
 	Normal normal;
 	Point3D local_hit_point;
-	double		tmin 			= kHugeValue;
+	double		tmin 			= HUGE_VALUE;
 	int 		num_objects 	= objects.size();
 	
 	for (int j = 0; j < num_objects; j++)
@@ -271,7 +299,7 @@ World::delete_objects(void) {
 		//delete objects[j];
 		//objects[j] = NULL;
 		// Now we can call an Explicit Delete on the Stored Object (However it is not nessessary).
-		objects[j].Delete();
+		//objects[j].delete_now();
 		
 	}		
 	objects.erase (objects.begin(), objects.end());
@@ -283,20 +311,30 @@ void
 World::delete_lights(void) {
 	int num_lights = lights.size();
 	
-	for (int j = 0; j < num_lights; j++) {
+	// Handled by SmartPointer :)
+	/*for (int j = 0; j < num_lights; j++) {
 		delete lights[j];
 		lights[j] = NULL;
-	}	
+	}	*/
 	
 	lights.erase (lights.begin(), lights.end());
 }
 
 bool
-World::StopRendering() const
+World::stop_rendering() const
 {
 	if(paintArea != NULL)
 		return paintArea->Stop();
 	else
 		return true;
+}
+
+RenderDisplay
+World::render_display() const
+{
+	if(paintArea != NULL)
+		return paintArea->Display();
+	else
+		return EVERY_ROW;
 }
 

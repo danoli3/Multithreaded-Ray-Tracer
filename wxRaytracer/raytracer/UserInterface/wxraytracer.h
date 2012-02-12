@@ -6,29 +6,40 @@
  *
  * Author : Sverre Kvaale <sverre@kvaale.com>
  * Multithreading Author: Daniel Rosser <danoli3@gmail.com>
- * Version: 0.9.2
+ * Version: 1.2.5
  */
+#include <wx/setup.h>
 #include <wx/wx.h>
 #include <wx/frame.h>
 #include <wx/thread.h>
 #include <wx/menu.h>
 #include <wx/app.h>
 #include <wx/rawbmp.h>
+#include <wx/event.h>
 #include "World.h"
 #include <vector>
 #include "MultiThread.h"
 
-//#include "vld.h" // Memory Leak Detection // http://vld.codeplex.com/
+//#if DEBUG
+//#include "vld.h"
+//#endif
 
 #include <stdlib.h>
 #include <assert.h>
 #include <map>
 #include <list>
+#include <iostream>
+#include <algorithm>
+#include <numeric>
+#include <iterator>
 
 #define SAMPLE_HACK 0; // 0 - 1 shared world object
 					   // 1 - Creates multiple instances of World (1 per thread)
+#define WXWIDGETS292 0; // 0 is standard WxWidgets 2.6 from 2007
+						// 1 is WxWidgets 2.9.2
+				      
 
-using namespace std;
+//using namespace std;
 
 class wxraytracerFrame;
 class RenderCanvas;
@@ -36,7 +47,12 @@ class RenderThread;
 class WorkerThread;
 class RenderPixel;
 
-DECLARE_EVENT_TYPE(wxEVT_THREAD, -1)
+#if WXWIDGETS292>0
+	wxDECLARE_EVENT(THE_THREADS, wxThreadEvent); // 2.9.2 way of declaring events
+#else
+	DECLARE_EVENT_TYPE(wxEVT_THREAD, -1)
+#endif
+
 
 class tJOB
 {
@@ -50,12 +66,12 @@ class tJOB
       eID_THREAD_JOBERR				  // process errorneous job after which thread likes to exit
     }; // enum tCOMMANDS
   
-    tJOB() : cmd(eID_THREAD_NULL), theJob() {}
-	tJOB(tCOMMANDS cmd, const wxString& arg) : cmd(cmd), arg(arg), theJob() {}
-	tJOB(tCOMMANDS cmd, const wxString& arg, PixelPoints jobID) : cmd(cmd), arg(arg)
-	{ theJob.origin = jobID.origin; theJob.end = jobID.end; }
-    tCOMMANDS cmd; wxString arg;
-	PixelPoints theJob;
+    tJOB() : cmd(eID_THREAD_NULL) {}
+	tJOB(tCOMMANDS cmd, const wxString& arg) : cmd(cmd), arg(arg){}	
+	tJOB(tCOMMANDS cmd, const wxString& arg, vector<Pixel>& jobID) : cmd(cmd), arg(arg)
+	{ theJobs = jobID; }
+    tCOMMANDS cmd; wxString arg;	
+	vector<Pixel> theJobs;
 }; // class tJOB
   
   class Queue
@@ -134,11 +150,33 @@ public:
    void OnThreadSingle( wxCommandEvent& event );
    void OnThreadDual( wxCommandEvent& event );
    void OnThreadQuad( wxCommandEvent& event );
+   void OnThreadJob( wxCommandEvent& event );
+   void OnRenderModeGrid ( wxCommandEvent& event );
+   void OnRenderModeRandom ( wxCommandEvent& event );
+   void OnRenderModeSpiralOut ( wxCommandEvent& event );
+   void OnRenderModeSpiralIn ( wxCommandEvent& event );
+   void OnRenderModeSpiralInAndOut ( wxCommandEvent& event );
+   void OnRenderModeSpiralInAndOut2 ( wxCommandEvent& event );
+   void OnRenderModeSequence ( wxCommandEvent& event );
+   void OnRenderDisplayPixel ( wxCommandEvent& event );
+   void OnRenderDisplayRow ( wxCommandEvent& event );
+   void OnRenderDisplayJob ( wxCommandEvent& event );
    void OnDivisionDefault ( wxCommandEvent& event );
    void OnDivisionSingle ( wxCommandEvent& event );
    void OnDivisionDual ( wxCommandEvent& event );
    void OnDivisionQuad ( wxCommandEvent& event );
    void OnDivision64 ( wxCommandEvent& event );
+   void OnSamples_Build( wxCommandEvent& event );
+   void OnSamples_1( wxCommandEvent& event );
+   void OnSamples_2( wxCommandEvent& event );
+   void OnSamples_4( wxCommandEvent& event );
+   void OnSamples_8( wxCommandEvent& event );
+   void OnSamples_16( wxCommandEvent& event );
+   void OnSamples_24( wxCommandEvent& event );
+   void OnSamples_32( wxCommandEvent& event );
+   void OnSamples_64( wxCommandEvent& event );
+   void OnSamples_128( wxCommandEvent& event );
+   void OnSamples_256( wxCommandEvent& event );
 
 private:
    RenderCanvas *canvas; //where the rendering takes place
@@ -159,17 +197,47 @@ enum
    Menu_Thread_Single,
    Menu_Thread_Dual,
    Menu_Thread_Quad,
+   Menu_Thread_Job,
+   Menu_Render_Mode_Grid,
+   Menu_Render_Mode_Random,
+   Menu_Render_Mode_Spiral_Out,
+   Menu_Render_Mode_Spiral_In, 
+   Menu_Render_Mode_Spiral_In_And_Out,
+   Menu_Render_Mode_Spiral_In_And_Out2,
+   Menu_Render_Mode_Sequence,
+   Menu_Render_Display_Pixel,
+   Menu_Render_Display_Row,
+   Menu_Render_Display_Job,     
    Menu_Division_Default,
    Menu_Division_Single,
    Menu_Division_Dual,
    Menu_Division_Quad,
-   Menu_Division_64
+   Menu_Division_64,
+   Menu_Samples_Build,
+   Menu_Samples_1,
+   Menu_Samples_2,
+   Menu_Samples_4,
+   Menu_Samples_8,
+   Menu_Samples_16,
+   Menu_Samples_24,
+   Menu_Samples_32,
+   Menu_Samples_64,
+   Menu_Samples_128,
+   Menu_Samples_256
 };
 
+
+
 class RenderCanvas: public wxScrolledWindow
-{
+{	
 	enum { eQUIT=wxID_CLOSE, eSTART_THREAD=wxID_HIGHEST+100 };
+   
+
 public:
+
+   enum RenderMode { GRID, RANDOM, SPIRAL_IN, SPIRAL_OUT, SPIRAL_IN_AND_OUT, SPIRAL_IN_AND_OUT2, SEQUENCE };
+   enum Direction { UP, DOWN, LEFT, RIGHT };
+
    RenderCanvas(wxWindow *parent);
    virtual ~RenderCanvas(void);
     
@@ -193,12 +261,17 @@ public:
    void OnQuit();
    void OnStart();
 
+   std::vector<Pixel> spiral(int &x, int &y, int &width, int &height, Direction direction);
+
    int totalThreads; 
    int threadNumber;
    int divisions;
    int divisionsNumber;
+   RenderMode renderMode;
+   RenderDisplay renderDisplay;
    World* w;
    RenderThread* manager;
+   int samples;
 protected:
    wxBitmap *theImage;
    wxStopWatch* timer;
@@ -248,6 +321,8 @@ public:
    virtual void setPixel(const list<RenderedInt>& rendered);
    virtual bool Stop() const;
    virtual void StopRendering();
+   virtual void SetRenderDisplay(RenderDisplay display);
+   virtual RenderDisplay Display() const;
 private:
    void NotifyCanvas();
    RenderCanvas* canvas;   
@@ -255,6 +330,7 @@ private:
    long lastUpdateTime; 
    wxStopWatch* timer;
    bool stop;
+   RenderDisplay renderDisplay;
 
    wxMutex mutex;
 };

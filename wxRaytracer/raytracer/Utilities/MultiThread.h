@@ -30,10 +30,17 @@ struct RenderedInt {
   int x, y, r, g, b;
 } ;
 
-struct PixelPoints {
-  Point2D origin;
-  Point2D end;  
-} ;
+class Pixel
+{
+public:
+   Pixel(int xi, int yi) : x(xi), y(yi)
+   { }
+
+   int x, y;
+};
+
+
+enum RenderDisplay { EVERY_PIXEL, EVERY_ROW, EVERY_JOB };
 
 
 #endif

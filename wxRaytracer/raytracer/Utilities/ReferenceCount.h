@@ -25,26 +25,32 @@
 
 class ReferenceCount {
 public:
-    ReferenceCount() { references = 0; }
-	void increment();
-	int decrement();
-    int references;
+    ReferenceCount(void) 
+		: references(0) { }
+
+	void increment(void);
+
+	int decrement(void);    
 private:
-    ReferenceCount( const ReferenceCount & );
-    ReferenceCount &operator=( const ReferenceCount & );
+
+    ReferenceCount( const ReferenceCount& rf);
+
+    ReferenceCount& 
+	operator= ( const ReferenceCount& rhs);
+
+	int references;
 };
 
 inline void
-ReferenceCount::increment()
+ReferenceCount::increment(void)
 {
 	references++;
 }
 
 inline int
-ReferenceCount::decrement()
+ReferenceCount::decrement(void)
 {
 	return (--references);
 }
-
 
 #endif

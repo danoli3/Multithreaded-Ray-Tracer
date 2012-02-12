@@ -42,6 +42,12 @@ class Lambertian: public BRDF {
 		
 		void													
 		set_cd(const float c);
+
+	    float													
+		get_kd() const;
+
+		RGBColor													
+		get_cd() const;
 					
 	private:
 	

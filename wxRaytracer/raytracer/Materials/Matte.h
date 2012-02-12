@@ -39,9 +39,12 @@ class Matte: public Material {
 		virtual RGBColor										
 		shade(ShadeRec& sr);
 		
+		void 
+		set_sampler(Sampler* sPtr);
+		
 	private:		
-		Lambertian*		ambient_brdf;
-		Lambertian*		diffuse_brdf;
+		SmartPointer<Lambertian>		ambient_brdf;
+		SmartPointer<Lambertian>		diffuse_brdf;
 };
 
 
@@ -88,6 +91,14 @@ inline void
 Matte::set_cd(const float c) {
 	ambient_brdf->set_cd(c);
 	diffuse_brdf->set_cd(c);
+}
+
+// ---------------------------------------------------------- set_sampler
+
+inline void
+Matte::set_sampler(Sampler* sPtr) {
+	ambient_brdf->set_sampler(sPtr);
+	diffuse_brdf->set_sampler(sPtr);
 }
 
 #endif

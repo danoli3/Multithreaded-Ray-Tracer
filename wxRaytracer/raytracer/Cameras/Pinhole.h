@@ -37,7 +37,7 @@ class Pinhole: public Camera {
 		render_scene(const World& w);
 		
 		virtual void
-		render_scene(const World& w, const PixelPoints& grid);
+		render_scene(const World& w, const std::vector<Pixel>& pixels);
 		
 	private:
 			

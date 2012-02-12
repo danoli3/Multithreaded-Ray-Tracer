@@ -55,7 +55,7 @@
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>wxWidgets\include;wxWidgets\msw;raytracer\BRDFs;raytracer\BTDFs;raytracer\build;raytracer\Cameras;raytracer\GeometricObjects;raytracer\Lights;raytracer\Mappings;raytracer\Materials;raytracer\Noises;raytracer\Samplers;raytracer\Textures;raytracer\Tracers;raytracer\UserInterface;raytracer\Utilities;raytracer\World;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;__WIN32__;__WXMSW__;WINVER=0x0400;STRICT;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <MinimalRebuild>true</MinimalRebuild>
+      <MinimalRebuild>false</MinimalRebuild>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <BufferSecurityCheck>true</BufferSecurityCheck>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>

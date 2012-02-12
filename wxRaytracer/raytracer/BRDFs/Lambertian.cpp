@@ -53,7 +53,7 @@ Lambertian::operator= (const Lambertian& rhs) {
 
 RGBColor
 Lambertian::f(const ShadeRec& sr, const Vector3D& wo, const Vector3D& wi) const {
-	return (kd * cd * invPI);
+	return (kd * cd * INV_PI);
 }
 
 // ---------------------------------------------------------------------- sample_f
@@ -75,9 +75,9 @@ Lambertian::sample_f(ShadeRec& sr, const Vector3D& wo, Vector3D& wi, float& pdf)
 	wi = sp.x * u + sp.y * v + sp.z * w;
 	wi.normalize(); 	
 	
-	pdf = sr.normal * wi * invPI;
+	pdf = sr.normal * wi * INV_PI;
 	
-	return (kd * cd * invPI); 
+	return (kd * cd * INV_PI); 
 }
 
 
@@ -89,3 +89,13 @@ Lambertian::rho(const ShadeRec& sr, const Vector3D& wo) const {
 }
 
 
+float
+Lambertian::get_kd() const {
+	return kd;
+}
+
+RGBColor													
+Lambertian::get_cd() const
+{
+	return cd;
+}

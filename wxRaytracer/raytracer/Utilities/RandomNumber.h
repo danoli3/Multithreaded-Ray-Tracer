@@ -18,19 +18,12 @@
 //
 //    Daniel Rosser <danoli3@gmail.com> 
 
-
 #include "Constants.h"
 #include "MTRand.h"
 
-class RandomNumber
-{
-private: 
-	
 
-	bool mersenne_twister;
-	MTRand_int32 *mtrand;
-public:
-	
+class RandomNumber {
+public:	
 
 	RandomNumber()
 		:mersenne_twister(true)		
@@ -83,6 +76,10 @@ public:
 	float
 	getrand();
 
+private: 
+	bool mersenne_twister;
+	MTRand_int32 *mtrand;
+
 };
 
 // ---------------------------------------------------- rand_int
@@ -103,9 +100,9 @@ RandomNumber::rand_int(void) {
 inline float
 RandomNumber::rand_float(void) {
 	if(mersenne_twister)
-		return ((float)rand_int() * invMT_RAND_MAX);
+		return ((float)rand_int() * INV_MT_RAND_MAX);
 	else
-		return((float)rand_int() * invRAND_MAX);
+		return((float)rand_int() * INV_RAND_MAX);
 	
 }
 

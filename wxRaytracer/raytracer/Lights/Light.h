@@ -5,12 +5,15 @@
 #include "RGBColor.h"
 #include "Ray.h"
 
+#include "ReferenceCount.h"
+#include "SmartPointer.h"
+
 class ShadeRec;
 
 
 //-------------------------------------------------------------------- class Light
 
-class Light {	
+class Light : public ReferenceCount {	
 	public:
 	
 		Light(void);

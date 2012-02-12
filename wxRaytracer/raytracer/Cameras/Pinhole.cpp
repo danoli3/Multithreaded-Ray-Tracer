@@ -99,57 +99,80 @@ Pinhole::render_scene(const World& w) {
 		} 
 }
 
+//------------------------------------ Multithreaded Render_Scene
 void 																		
-Pinhole::render_scene(const World& w, const PixelPoints& grid)
+Pinhole::render_scene(const World& w, const std::vector<Pixel>& pixels)
 {
 	RGBColor	L;
 	ViewPlane	vp(w.vp);	 								
 	Ray			ray;
-	int 		depth = 0;  // recusrion depth	
+	int 		depth = 0;  // recusrion depth
+	//Point2D		sp;			// sample point in [0,1] x [0,1]
 	Point2D 	pp;			// sample point on a pixel
-	int n = (int)sqrt((float)vp.num_samples);
+	
+	int n = (int)sqrt((float)vp.num_samples); 
 	
 	vp.s /= zoom;
 	ray.o = eye;
-
+	
 	list<RenderedPixel> render;   // for send every row
 	RenderedPixel pixel;		  // "
 	int count = 0;
 	int jump  = 0;
-	
-
-	for (int r = grid.origin.y; r < grid.end.y; r++)
-	{// up
-		for (int c = grid.origin.x; c < grid.end.x; c++) {		// across 					
-			L = black; 		
-			//int sp_count = 0;
-			//int sp_jump = 0;
-			for (int p = 0; p < n; p++)			// up pixel
-				for (int q = 0; q < n; q++) {	// across pixel
-					//sp = vp.sampler_ptr->sample_unit_square(sp_count, sp_jump); // for when you use the sampler	
-					pp.x = vp.s * (c - 0.5 * vp.hres + (q + 0.5) / n); 
-					pp.y = vp.s * (r - 0.5 * vp.vres + (p + 0.5) / n);
-					ray.d = get_direction(pp);
-					L += w.tracer_ptr->trace_ray(ray, depth, count, jump);
-				}	
+			
+	for(int i = 0; i< pixels.size(); i++)
+	{			
+		Pixel screen_pixel = pixels[i];
+		L = black; 
+		int sp_count = 0;
+		int sp_jump = 0;
+		for (int p = 0; p < n; p++)	{		// up pixel
+			for (int q = 0; q < n; q++) {	// across pixel	
+				pp.x = vp.s * (screen_pixel.x - 0.5 * vp.hres + (q + 0.5) / n); 
+				pp.y = vp.s * (screen_pixel.y - 0.5 * vp.vres + (p + 0.5) / n);
+				ray.d = get_direction(pp);
+				L += w.tracer_ptr->trace_ray(ray, depth, count, jump);
+			}	
+		}
+		
+		// Sampling using Sampler 
+		//for (int j = 0; j < vp.num_samples; j++){
+		//sp = vp.sampler_ptr->sample_unit_square(sp_count, sp_jump); // for when you use the sampler	
+		//pp.x = vp.s * (screen_pixel.x - 0.5 * vp.hres + sp.x); 
+		//pp.y = vp.s * (screen_pixel.y - 0.5 * vp.vres + sp.y);
+		// L + = ...
+	    //}
 											
-			L /= vp.num_samples;
-			L *= exposure_time;
+		L /= vp.num_samples;
+		L *= exposure_time;
 
-			pixel.color = L;			// for send every row
-			pixel.xy = Point2D(c,r);	// "
-			render.push_back(pixel);    // "
-			if(w.StopRendering())       // if the program is asked to close, we need end this now
-			{	w.display_pixel(render);  
+		pixel.color = L;			// for send every row
+		pixel.xy = Point2D(screen_pixel.x,screen_pixel.y);	// "
+		render.push_back(pixel);    // "
+
+		if(w.stop_rendering())       // if the program is asked to close, we need end this now
+		{	w.display_pixel(render);  
+				render.clear();	
+				return; 	}	
+
+			if(w.render_display() == EVERY_PIXEL)
+			{	w.display_pixel(render);   // send to the screen buffer every pixel rendered
+				render.clear();	
+			}
+			else if(w.render_display() == EVERY_ROW)
+			{	
+				if(i % (pixels.size()/10) == 0)
+				{
+					w.display_pixel(render);   // send to the screen buffer every pixel rendered
 					render.clear();	
-					return;	}
-		//w.display_pixel(r, c, L);   // send to the screen buffer every pixel rendered
-		} 
-		w.display_pixel(render);   // send to the screen buffer every row of pixels rendered
-		render.clear();		       // clears the render list
+				}
+			}
 	}
-	//w.display_pixel(render);   // send to the screen buffer every completion of all grid pixels rendered
-	//render.clear();		     // clears the render list
+
+	if(w.render_display() == EVERY_JOB || w.render_display() == EVERY_ROW)
+	{	w.display_pixel(render);   // send to the screen buffer every row of pixels rendered
+		render.clear();	
+	}		
 }
 
 

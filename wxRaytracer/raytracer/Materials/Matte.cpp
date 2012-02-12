@@ -17,11 +17,11 @@ Matte::Matte(const Matte& m)
 {
 	if(m.ambient_brdf)
 		ambient_brdf = m.ambient_brdf->clone(); 
-	else  ambient_brdf = NULL;
+	//else  ambient_brdf = NULL;
 	
 	if(m.diffuse_brdf)
 		diffuse_brdf = m.diffuse_brdf->clone(); 
-	else  diffuse_brdf = NULL;
+	//else  diffuse_brdf = NULL;
 }
 
 
@@ -42,18 +42,18 @@ Matte::operator= (const Matte& rhs) {
 		
 	Material::operator=(rhs);
 	
-	if (ambient_brdf) {
-		delete ambient_brdf;
-		ambient_brdf = NULL;
-	}
+	//if (ambient_brdf) {
+	//	//delete ambient_brdf;
+	//	//ambient_brdf = NULL;
+	//}
 
 	if (rhs.ambient_brdf)
 		ambient_brdf = rhs.ambient_brdf->clone();
 		
-	if (diffuse_brdf) {
-		delete diffuse_brdf;
-		diffuse_brdf = NULL;
-	}
+	//if (diffuse_brdf) {
+	//	//delete diffuse_brdf;
+	//	//diffuse_brdf = NULL;
+	//}
 
 	if (rhs.diffuse_brdf)
 		diffuse_brdf = rhs.diffuse_brdf->clone();
@@ -66,15 +66,17 @@ Matte::operator= (const Matte& rhs) {
 
 Matte::~Matte(void) {
 
-	if (ambient_brdf) {
-		delete ambient_brdf;
-		ambient_brdf = NULL;
-	}
+	// Legacy code before SmartPointer :)
 	
-	if (diffuse_brdf) {
-		delete diffuse_brdf;
-		diffuse_brdf = NULL;
-	}
+	//if (ambient_brdf) {
+	//	//delete ambient_brdf;
+	//	ambient_brdf = NULL;
+	//}
+	//
+	//if (diffuse_brdf) {
+	//	delete diffuse_brdf;
+	//	diffuse_brdf = NULL;
+	//}
 }
 
 
@@ -87,10 +89,11 @@ Matte::shade(ShadeRec& sr) {
 	int 		num_lights	= sr.w.lights.size();
 	
 	for (int j = 0; j < num_lights; j++) {
-		Vector3D wi = sr.w.lights[j]->get_direction(sr);    
+		Vector3D wi(sr.w.lights[j]->get_direction(sr));    
 		float ndotwi = sr.normal * wi;
+		float ndotwo = sr.normal * wo;
 	
-		if (ndotwi > 0.0) 
+		if (ndotwi > 0.0 && ndotwo > 0.0)
 			L += diffuse_brdf->f(sr, wo, wi) * sr.w.lights[j]->L(sr) * ndotwi;
 	}
 	

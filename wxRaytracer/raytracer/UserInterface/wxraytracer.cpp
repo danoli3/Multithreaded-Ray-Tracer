@@ -5,8 +5,14 @@
 #include "wxraytracer.h"
 #include "main.xpm"
 #include "bg.xpm"
+#include "black.xpm"
 
-DEFINE_EVENT_TYPE(wxEVT_THREAD)
+#if WXWIDGETS292>0
+	wxDEFINE_EVENT(THE_THREADS, wxThreadEvent);
+#else
+	DEFINE_EVENT_TYPE(wxEVT_THREAD);
+#endif
+
 
 /******************************************************************************/
 /********************* wxraytracerapp *****************************************/
@@ -55,11 +61,33 @@ BEGIN_EVENT_TABLE( wxraytracerFrame, wxFrame )
    EVT_MENU( Menu_Thread_Single, wxraytracerFrame::OnThreadSingle )
    EVT_MENU( Menu_Thread_Dual, wxraytracerFrame::OnThreadDual )
    EVT_MENU( Menu_Thread_Quad, wxraytracerFrame::OnThreadQuad )
+   EVT_MENU( Menu_Thread_Job, wxraytracerFrame::OnThreadJob )
+   EVT_MENU( Menu_Render_Mode_Grid, wxraytracerFrame::OnRenderModeGrid )
+   EVT_MENU( Menu_Render_Mode_Random, wxraytracerFrame::OnRenderModeRandom )
+   EVT_MENU( Menu_Render_Mode_Spiral_Out, wxraytracerFrame::OnRenderModeSpiralOut )
+   EVT_MENU( Menu_Render_Mode_Spiral_In, wxraytracerFrame::OnRenderModeSpiralIn )
+   EVT_MENU( Menu_Render_Mode_Spiral_In_And_Out, wxraytracerFrame::OnRenderModeSpiralInAndOut )
+   EVT_MENU( Menu_Render_Mode_Spiral_In_And_Out2, wxraytracerFrame::OnRenderModeSpiralInAndOut2 )
+   EVT_MENU( Menu_Render_Mode_Sequence, wxraytracerFrame::OnRenderModeSequence )
+   EVT_MENU( Menu_Render_Display_Pixel, wxraytracerFrame::OnRenderDisplayPixel )
+   EVT_MENU( Menu_Render_Display_Row, wxraytracerFrame::OnRenderDisplayRow )
+   EVT_MENU( Menu_Render_Display_Job, wxraytracerFrame::OnRenderDisplayJob )
    EVT_MENU( Menu_Division_Default, wxraytracerFrame::OnDivisionDefault )
    EVT_MENU( Menu_Division_Single, wxraytracerFrame::OnDivisionSingle )
    EVT_MENU( Menu_Division_Dual, wxraytracerFrame::OnDivisionDual )
    EVT_MENU( Menu_Division_Quad, wxraytracerFrame::OnDivisionQuad )
    EVT_MENU( Menu_Division_64, wxraytracerFrame::OnDivision64 )
+   EVT_MENU( Menu_Samples_Build, wxraytracerFrame::OnSamples_Build )
+   EVT_MENU( Menu_Samples_1, wxraytracerFrame::OnSamples_1 )
+   EVT_MENU( Menu_Samples_2, wxraytracerFrame::OnSamples_2 )
+   EVT_MENU( Menu_Samples_4, wxraytracerFrame::OnSamples_4 )
+   EVT_MENU( Menu_Samples_8, wxraytracerFrame::OnSamples_8 )
+   EVT_MENU( Menu_Samples_16, wxraytracerFrame::OnSamples_16 )
+   EVT_MENU( Menu_Samples_24, wxraytracerFrame::OnSamples_24 )
+   EVT_MENU( Menu_Samples_32, wxraytracerFrame::OnSamples_32 )
+   EVT_MENU( Menu_Samples_64, wxraytracerFrame::OnSamples_64 )
+   EVT_MENU( Menu_Samples_128, wxraytracerFrame::OnSamples_128 )
+   EVT_MENU( Menu_Samples_256, wxraytracerFrame::OnSamples_256 )
    EVT_COMMAND(ID_RENDER_COMPLETED, wxEVT_RENDER, wxraytracerFrame::OnRenderCompleted)
 END_EVENT_TABLE()
 
@@ -71,7 +99,7 @@ wxraytracerFrame::wxraytracerFrame(const wxPoint& pos, const wxSize& size)
    menuFile->Append(Menu_File_Open, wxT("&Open..."   ));
    menuFile->Append(Menu_File_Save, wxT("&Save As..."));
    menuFile->AppendSeparator();
-   menuFile->Append(Menu_File_Quit, wxT("E&xit"));
+   menuFile->Append(Menu_File_Quit, wxT("&Exit"));
    
    menuFile->Enable(menuFile->FindItem(wxT("&Save As...")), FALSE);
    
@@ -93,9 +121,22 @@ wxraytracerFrame::wxraytracerFrame(const wxPoint& pos, const wxSize& size)
    menuMultithread->AppendRadioItem(Menu_Thread_Single , wxT("&Single Thread" ));
    menuMultithread->AppendRadioItem(Menu_Thread_Dual, wxT("&Dual Threads"));
    menuMultithread->AppendRadioItem(Menu_Thread_Quad, wxT("&Quad Threads"));
+   menuMultithread->AppendRadioItem(Menu_Thread_Job, wxT("&Thread per Job"));
 
    menuMultithread->Check(menuMultithread->FindItem(wxT("&Thread per system core" )), TRUE );   
  
+   //---------------------------------------- RenderMode Menu
+
+   wxMenu *menuRenderMode = new wxMenu;
+   menuRenderMode->AppendRadioItem(Menu_Render_Mode_Spiral_In_And_Out2, wxT("&Spiral In and Out v2"));
+   menuRenderMode->AppendRadioItem(Menu_Render_Mode_Spiral_In_And_Out, wxT("&Spiral In and Out"));
+   menuRenderMode->AppendRadioItem(Menu_Render_Mode_Spiral_Out, wxT("&Spiral Out"));  
+   menuRenderMode->AppendRadioItem(Menu_Render_Mode_Spiral_In, wxT("&Spiral In"));
+   menuRenderMode->AppendRadioItem(Menu_Render_Mode_Sequence, wxT("&Sequence"));  
+   menuRenderMode->AppendRadioItem(Menu_Render_Mode_Random, wxT("&Random"));  
+   menuRenderMode->AppendRadioItem(Menu_Render_Mode_Grid , wxT("&Grid" ));
+  
+   menuRenderMode->Check(menuRenderMode->FindItem(wxT("&Spiral In and Out v2" )), TRUE );  
 
    //---------------------------------------- Divisions Menu
 
@@ -109,6 +150,30 @@ wxraytracerFrame::wxraytracerFrame(const wxPoint& pos, const wxSize& size)
 
    menuDivisions->Check(menuDivisions->FindItem(wxT("&8x8 Grid" )), TRUE );   
 
+  //---------------------------------------- RenderDisplay Menu
+
+   wxMenu *menuRenderDisplay = new wxMenu;
+
+   menuRenderDisplay->AppendRadioItem(Menu_Render_Display_Pixel , wxT("&Every Pixel" ));
+   menuRenderDisplay->AppendRadioItem(Menu_Render_Display_Row, wxT("&Every Row"));
+   menuRenderDisplay->AppendRadioItem(Menu_Render_Display_Job, wxT("&End of Job"));
+   menuRenderDisplay->Check(menuRenderDisplay->FindItem(wxT("&Every Pixel" )), TRUE );  
+
+   wxMenu *menuSamples = new wxMenu;
+
+   menuSamples->AppendRadioItem(Menu_Samples_Build, wxT("&Set by Build" ));
+   menuSamples->AppendRadioItem(Menu_Samples_1, wxT("&1" ));
+   menuSamples->AppendRadioItem(Menu_Samples_2, wxT("&2" ));
+   menuSamples->AppendRadioItem(Menu_Samples_4, wxT("&4" ));
+   menuSamples->AppendRadioItem(Menu_Samples_8, wxT("&8" ));
+   menuSamples->AppendRadioItem(Menu_Samples_16, wxT("&16" ));
+   menuSamples->AppendRadioItem(Menu_Samples_24, wxT("&24" ));
+   menuSamples->AppendRadioItem(Menu_Samples_32, wxT("&32" ));
+   menuSamples->AppendRadioItem(Menu_Samples_64, wxT("&64" ));
+   menuSamples->AppendRadioItem(Menu_Samples_128, wxT("&128" ));
+   menuSamples->AppendRadioItem(Menu_Samples_256, wxT("&256" ));
+   menuSamples->Check(menuSamples->FindItem(wxT("&Set by Build" )), TRUE );  
+
 
    //-------------------------------------- Create the MenuBar
 
@@ -116,7 +181,10 @@ wxraytracerFrame::wxraytracerFrame(const wxPoint& pos, const wxSize& size)
    menuBar->Append(menuFile  , wxT("&File"  ));
    menuBar->Append(menuRender, wxT("&Render"));
    menuBar->Append(menuMultithread, wxT("&Multithreading"));
+   menuBar->Append(menuRenderMode, wxT("&RenderMode"));
    menuBar->Append(menuDivisions, wxT("&Divisions"));
+   menuBar->Append(menuRenderDisplay, wxT("&Display"));
+   menuBar->Append(menuSamples, wxT("&Anti-Aliasing"));
 
    
    SetMenuBar( menuBar );
@@ -130,7 +198,7 @@ wxraytracerFrame::wxraytracerFrame(const wxPoint& pos, const wxSize& size)
    SetIcon(icon);   
    
    wxStatusBar* statusBar = GetStatusBar();
-   int widths[] = {150,300};
+   int widths[] = {160,320};
    statusBar->SetFieldsCount(2, widths);
 }
 
@@ -245,13 +313,82 @@ void wxraytracerFrame::OnThreadQuad( wxCommandEvent& WXUNUSED( event ) )
    canvas->threadNumber = 4;
 }
 
+void wxraytracerFrame::OnThreadJob( wxCommandEvent& WXUNUSED( event ) )
+{
+   wxMenu* menu = GetMenuBar()->GetMenu(2);
+   menu->Check(menu->FindItem(wxT("&Thread per Job")), TRUE);
+   
+  /* int divisions = canvas->divisionsNumber * canvas->divisionsNumber;
+   if(divisions > 4096)  
+		canvas->threadNumber = 4096;
+   else
+	   canvas->threadNumber = divisions;*/
+   canvas->threadNumber = 9000;
+}
+
+
+void wxraytracerFrame::OnRenderModeGrid( wxCommandEvent& WXUNUSED( event ) )
+{
+   wxMenu* menu = GetMenuBar()->GetMenu(3);
+   menu->Check(menu->FindItem(wxT("&Grid")), TRUE);
+   
+   canvas->renderMode = canvas->GRID;
+}
+
+void wxraytracerFrame::OnRenderModeRandom( wxCommandEvent& WXUNUSED( event ) )
+{
+   wxMenu* menu = GetMenuBar()->GetMenu(3);
+   menu->Check(menu->FindItem(wxT("&Random")), TRUE);
+   
+   canvas->renderMode = canvas->RANDOM;
+}
+
+void wxraytracerFrame::OnRenderModeSpiralOut( wxCommandEvent& WXUNUSED( event ) )
+{
+   wxMenu* menu = GetMenuBar()->GetMenu(3);
+   menu->Check(menu->FindItem(wxT("&Spiral Out")), TRUE);
+   
+   canvas->renderMode = canvas->SPIRAL_OUT;
+}
+
+void wxraytracerFrame::OnRenderModeSpiralIn( wxCommandEvent& WXUNUSED( event ) )
+{
+   wxMenu* menu = GetMenuBar()->GetMenu(3);
+   menu->Check(menu->FindItem(wxT("&Spiral In")), TRUE);
+   
+   canvas->renderMode = canvas->SPIRAL_IN;
+}
+
+void wxraytracerFrame::OnRenderModeSpiralInAndOut( wxCommandEvent& WXUNUSED( event ) )
+{
+   wxMenu* menu = GetMenuBar()->GetMenu(3);
+   menu->Check(menu->FindItem(wxT("&Spiral In and Out")), TRUE);
+   
+   canvas->renderMode = canvas->SPIRAL_IN_AND_OUT;
+}
+
+void wxraytracerFrame::OnRenderModeSpiralInAndOut2( wxCommandEvent& WXUNUSED( event ) )
+{
+   wxMenu* menu = GetMenuBar()->GetMenu(3);
+   menu->Check(menu->FindItem(wxT("&Spiral In and Out v2")), TRUE);
+   
+   canvas->renderMode = canvas->SPIRAL_IN_AND_OUT2;
+}
+
+void wxraytracerFrame::OnRenderModeSequence( wxCommandEvent& WXUNUSED( event ) )
+{
+   wxMenu* menu = GetMenuBar()->GetMenu(3);
+   menu->Check(menu->FindItem(wxT("&Sequence")), TRUE);
+   
+   canvas->renderMode = canvas->SEQUENCE;
+}
 
 
 //------------------------------- Divisions
 
 void wxraytracerFrame::OnDivisionDefault( wxCommandEvent& WXUNUSED( event ) )
 {
-   wxMenu* menu = GetMenuBar()->GetMenu(3);
+   wxMenu* menu = GetMenuBar()->GetMenu(4);
    menu->Check(menu->FindItem(wxT("&8x8 Grid")), TRUE);
    
    canvas->divisionsNumber = 0;
@@ -259,7 +396,7 @@ void wxraytracerFrame::OnDivisionDefault( wxCommandEvent& WXUNUSED( event ) )
 
 void wxraytracerFrame::OnDivisionSingle( wxCommandEvent& WXUNUSED( event ) )
 {
-   wxMenu* menu = GetMenuBar()->GetMenu(3);
+   wxMenu* menu = GetMenuBar()->GetMenu(4);
    menu->Check(menu->FindItem(wxT("&1x1 Grid")), TRUE);
    
    canvas->divisionsNumber = 1;
@@ -267,7 +404,7 @@ void wxraytracerFrame::OnDivisionSingle( wxCommandEvent& WXUNUSED( event ) )
 
 void wxraytracerFrame::OnDivisionDual( wxCommandEvent& WXUNUSED( event ) )
 {
-   wxMenu* menu = GetMenuBar()->GetMenu(3);
+   wxMenu* menu = GetMenuBar()->GetMenu(4);
    menu->Check(menu->FindItem(wxT("&2x2 Grid")), TRUE);
    
    canvas->divisionsNumber = 2;
@@ -276,7 +413,7 @@ void wxraytracerFrame::OnDivisionDual( wxCommandEvent& WXUNUSED( event ) )
 
 void wxraytracerFrame::OnDivisionQuad( wxCommandEvent& WXUNUSED( event ) )
 {
-   wxMenu* menu = GetMenuBar()->GetMenu(3);
+   wxMenu* menu = GetMenuBar()->GetMenu(4);
    menu->Check(menu->FindItem(wxT("&4x4 Grid")), TRUE);
    
    canvas->divisionsNumber = 4;
@@ -284,14 +421,98 @@ void wxraytracerFrame::OnDivisionQuad( wxCommandEvent& WXUNUSED( event ) )
 
 void wxraytracerFrame::OnDivision64( wxCommandEvent& WXUNUSED( event ) )
 {
-   wxMenu* menu = GetMenuBar()->GetMenu(3);
+   wxMenu* menu = GetMenuBar()->GetMenu(4);
    menu->Check(menu->FindItem(wxT("&64x64 Grid")), TRUE);
    
    canvas->divisionsNumber = 64;
 }
 
 
+void wxraytracerFrame::OnRenderDisplayPixel( wxCommandEvent& WXUNUSED( event ) )
+{
+   wxMenu* menu = GetMenuBar()->GetMenu(5);
+   menu->Check(menu->FindItem(wxT("&Every Pixel")), TRUE);
+   
+   canvas->renderDisplay = EVERY_PIXEL;
+   if(canvas->manager != NULL)
+	   canvas->manager->SetRenderDisplay(EVERY_PIXEL);
+}
 
+void wxraytracerFrame::OnRenderDisplayRow( wxCommandEvent& WXUNUSED( event ) )
+{
+   wxMenu* menu = GetMenuBar()->GetMenu(5);
+   menu->Check(menu->FindItem(wxT("&Every Row")), TRUE);
+   
+   canvas->renderDisplay = EVERY_ROW;
+   if(canvas->manager != NULL)
+	   canvas->manager->SetRenderDisplay(EVERY_ROW);
+}
+
+void wxraytracerFrame::OnRenderDisplayJob( wxCommandEvent& WXUNUSED( event ) )
+{
+   wxMenu* menu = GetMenuBar()->GetMenu(5);
+   menu->Check(menu->FindItem(wxT("&End of Job")), TRUE);
+   
+   canvas->renderDisplay = EVERY_JOB;
+   if(canvas->manager != NULL)
+	   canvas->manager->SetRenderDisplay(EVERY_JOB);
+}
+
+void wxraytracerFrame::OnSamples_Build( wxCommandEvent& WXUNUSED( event ) )
+{  wxMenu* menu = GetMenuBar()->GetMenu(6);
+   menu->Check(menu->FindItem(wxT("&Set by Build")), TRUE);   
+   if(canvas != NULL)
+	   canvas->samples = 0;  }
+void wxraytracerFrame::OnSamples_1( wxCommandEvent& WXUNUSED( event ) )
+{  wxMenu* menu = GetMenuBar()->GetMenu(6);
+   menu->Check(menu->FindItem(wxT("&1")), TRUE);   
+   if(canvas != NULL)
+	   canvas->samples = 1;  }
+void wxraytracerFrame::OnSamples_2( wxCommandEvent& WXUNUSED( event ) )
+{  wxMenu* menu = GetMenuBar()->GetMenu(6);
+   menu->Check(menu->FindItem(wxT("&2")), TRUE);   
+   if(canvas != NULL)
+	   canvas->samples = 2;  }
+void wxraytracerFrame::OnSamples_4( wxCommandEvent& WXUNUSED( event ) )
+{  wxMenu* menu = GetMenuBar()->GetMenu(6);
+   menu->Check(menu->FindItem(wxT("&4")), TRUE);   
+   if(canvas != NULL)
+	   canvas->samples = 4;  }
+void wxraytracerFrame::OnSamples_8( wxCommandEvent& WXUNUSED( event ) )
+{  wxMenu* menu = GetMenuBar()->GetMenu(6);
+   menu->Check(menu->FindItem(wxT("&8")), TRUE);   
+   if(canvas != NULL)
+	   canvas->samples = 8;  }
+void wxraytracerFrame::OnSamples_16( wxCommandEvent& WXUNUSED( event ) )
+{  wxMenu* menu = GetMenuBar()->GetMenu(6);
+   menu->Check(menu->FindItem(wxT("&16")), TRUE);   
+   if(canvas != NULL)
+	   canvas->samples = 16;  }
+void wxraytracerFrame::OnSamples_24( wxCommandEvent& WXUNUSED( event ) )
+{  wxMenu* menu = GetMenuBar()->GetMenu(6);
+   menu->Check(menu->FindItem(wxT("&24")), TRUE);   
+   if(canvas != NULL)
+	   canvas->samples = 24;  }
+void wxraytracerFrame::OnSamples_32( wxCommandEvent& WXUNUSED( event ) )
+{  wxMenu* menu = GetMenuBar()->GetMenu(6);
+   menu->Check(menu->FindItem(wxT("&32")), TRUE);   
+   if(canvas != NULL)
+	   canvas->samples = 32;  }
+void wxraytracerFrame::OnSamples_64( wxCommandEvent& WXUNUSED( event ) )
+{  wxMenu* menu = GetMenuBar()->GetMenu(6);
+   menu->Check(menu->FindItem(wxT("&64")), TRUE);   
+   if(canvas != NULL)
+	   canvas->samples = 64;  }
+void wxraytracerFrame::OnSamples_128( wxCommandEvent& WXUNUSED( event ) )
+{  wxMenu* menu = GetMenuBar()->GetMenu(6);
+   menu->Check(menu->FindItem(wxT("&128")), TRUE);   
+   if(canvas != NULL)
+	   canvas->samples = 128;  }
+void wxraytracerFrame::OnSamples_256( wxCommandEvent& WXUNUSED( event ) )
+{  wxMenu* menu = GetMenuBar()->GetMenu(6);
+   menu->Check(menu->FindItem(wxT("&256")), TRUE);   
+   if(canvas != NULL)
+	   canvas->samples = 256;  }
 
 
 void wxraytracerFrame::OnRenderStart( wxCommandEvent& WXUNUSED( event ) )
@@ -299,8 +520,7 @@ void wxraytracerFrame::OnRenderStart( wxCommandEvent& WXUNUSED( event ) )
    wxMenu* menu = GetMenuBar()->GetMenu(1);
    menu->Enable(menu->FindItem(wxT("&Start" )), FALSE);
    menu->Enable(menu->FindItem(wxT("&Pause" )), TRUE );
-   menu->Enable(menu->FindItem(wxT("&Resume")), FALSE);
-   menu->Enable(menu->FindItem(wxT("&Stop")), TRUE);
+   menu->Enable(menu->FindItem(wxT("&Resume")), FALSE);   
    
    canvas->renderStart();
    
@@ -313,13 +533,70 @@ void wxraytracerFrame::OnRenderStart( wxCommandEvent& WXUNUSED( event ) )
    menuThread->Enable(menuThread->FindItem(wxT("&Single Thread" )), FALSE);
    menuThread->Enable(menuThread->FindItem(wxT("&Dual Threads")), FALSE);
    menuThread->Enable(menuThread->FindItem(wxT("&Quad Threads")), FALSE);
+   menuThread->Enable(menuThread->FindItem(wxT("&Thread per Job")), FALSE);
 
-   wxMenu* menuDivision = GetMenuBar()->GetMenu(3);
+   wxMenu* menuRenderMode = GetMenuBar()->GetMenu(3);
+   menuRenderMode->Enable(menuRenderMode->FindItem(wxT("&Grid")), FALSE);
+   menuRenderMode->Enable(menuRenderMode->FindItem(wxT("&Random")), FALSE);
+   menuRenderMode->Enable(menuRenderMode->FindItem(wxT("&Spiral Out")), FALSE);
+   menuRenderMode->Enable(menuRenderMode->FindItem(wxT("&Spiral In and Out")), FALSE);
+   menuRenderMode->Enable(menuRenderMode->FindItem(wxT("&Spiral In and Out v2")), FALSE);
+   menuRenderMode->Enable(menuRenderMode->FindItem(wxT("&Spiral In")), FALSE);
+   menuRenderMode->Enable(menuRenderMode->FindItem(wxT("&Sequence")), FALSE);
+
+   wxMenu* menuDivision = GetMenuBar()->GetMenu(4);
    menuDivision->Enable(menuDivision->FindItem(wxT("&8x8 Grid" )), FALSE );
    menuDivision->Enable(menuDivision->FindItem(wxT("&1x1 Grid" )), FALSE);
    menuDivision->Enable(menuDivision->FindItem(wxT("&2x2 Grid")), FALSE);
    menuDivision->Enable(menuDivision->FindItem(wxT("&4x4 Grid")), FALSE);
    menuDivision->Enable(menuDivision->FindItem(wxT("&64x64 Grid")), FALSE);
+
+   wxMenu* menuRenderDisplay = GetMenuBar()->GetMenu(5);
+   menuRenderDisplay->Enable(menuRenderDisplay->FindItem(wxT("&Every Pixel" )), TRUE );
+   menuRenderDisplay->Enable(menuRenderDisplay->FindItem(wxT("&Every Row" )), TRUE);
+   menuRenderDisplay->Enable(menuRenderDisplay->FindItem(wxT("&End of Job")), TRUE);
+
+   wxMenu* menuSamples = GetMenuBar()->GetMenu(6);
+   if(canvas->samples != canvas->w->vp.num_samples)
+   {
+
+	   int currentSamples = canvas->w->vp.num_samples;
+	   if(currentSamples == 1)
+			menuSamples->Check(menuSamples->FindItem(wxT("&1" )), TRUE );  
+	   else if(currentSamples == 2)
+			menuSamples->Check(menuSamples->FindItem(wxT("&2" )), TRUE );  
+	   else if(currentSamples == 4)
+			menuSamples->Check(menuSamples->FindItem(wxT("&4" )), TRUE );  
+	   else if(currentSamples == 8)
+			menuSamples->Check(menuSamples->FindItem(wxT("&8" )), TRUE );  
+	   else if(currentSamples == 16)
+			menuSamples->Check(menuSamples->FindItem(wxT("&16" )), TRUE );  
+	   else if(currentSamples == 24)
+			menuSamples->Check(menuSamples->FindItem(wxT("&24" )), TRUE );  
+	   else if(currentSamples == 32)
+			menuSamples->Check(menuSamples->FindItem(wxT("&32" )), TRUE );  
+	   else if(currentSamples == 64)
+			menuSamples->Check(menuSamples->FindItem(wxT("&64" )), TRUE );  
+	   else if(currentSamples == 128)
+			menuSamples->Check(menuSamples->FindItem(wxT("&128" )), TRUE );  
+	   else if(currentSamples == 256)
+			menuSamples->Check(menuSamples->FindItem(wxT("&256" )), TRUE );  
+	   else
+			menuSamples->Check(menuSamples->FindItem(wxT("&Set by Build" )), TRUE );  
+   }
+   menuSamples->Enable(menuSamples->FindItem(wxT("&Set by Build" )), FALSE );
+   menuSamples->Enable(menuSamples->FindItem(wxT("&1" )), FALSE );
+   menuSamples->Enable(menuSamples->FindItem(wxT("&2" )), FALSE );
+   menuSamples->Enable(menuSamples->FindItem(wxT("&4" )), FALSE );
+   menuSamples->Enable(menuSamples->FindItem(wxT("&8" )), FALSE );
+   menuSamples->Enable(menuSamples->FindItem(wxT("&16" )), FALSE );
+   menuSamples->Enable(menuSamples->FindItem(wxT("&24" )), FALSE );
+   menuSamples->Enable(menuSamples->FindItem(wxT("&32" )), FALSE );
+   menuSamples->Enable(menuSamples->FindItem(wxT("&64" )), FALSE );
+   menuSamples->Enable(menuSamples->FindItem(wxT("&128" )), FALSE );
+   menuSamples->Enable(menuSamples->FindItem(wxT("&256" )), FALSE );
+   
+
 }
 
 void wxraytracerFrame::OnRenderCompleted( wxCommandEvent& event )
@@ -327,21 +604,48 @@ void wxraytracerFrame::OnRenderCompleted( wxCommandEvent& event )
    wxMenu* menu = GetMenuBar()->GetMenu(1);
    menu->Enable(menu->FindItem(wxT("&Start" )), TRUE );
    menu->Enable(menu->FindItem(wxT("&Pause" )), FALSE);
-   menu->Enable(menu->FindItem(wxT("&Resume")), FALSE);
-   menu->Enable(menu->FindItem(wxT("&Stop")), FALSE);
+   menu->Enable(menu->FindItem(wxT("&Resume")), FALSE); 
 
    wxMenu* menuThread = GetMenuBar()->GetMenu(2);
    menuThread->Enable(menuThread->FindItem(wxT("&Thread per system core" )), TRUE );
    menuThread->Enable(menuThread->FindItem(wxT("&Single Thread" )), TRUE);
    menuThread->Enable(menuThread->FindItem(wxT("&Dual Threads")), TRUE);
-    menuThread->Enable(menuThread->FindItem(wxT("&Quad Threads")), TRUE);
+   menuThread->Enable(menuThread->FindItem(wxT("&Quad Threads")), TRUE);
+   menuThread->Enable(menuThread->FindItem(wxT("&Thread per Job")), TRUE);
 
-   wxMenu* menuDivision = GetMenuBar()->GetMenu(3);
+   wxMenu* menuRenderMode = GetMenuBar()->GetMenu(3);
+   menuRenderMode->Enable(menuRenderMode->FindItem(wxT("&Grid")), TRUE);
+   menuRenderMode->Enable(menuRenderMode->FindItem(wxT("&Random")), TRUE);
+   menuRenderMode->Enable(menuRenderMode->FindItem(wxT("&Spiral Out")), TRUE);
+   menuRenderMode->Enable(menuRenderMode->FindItem(wxT("&Spiral In and Out")), TRUE);
+   menuRenderMode->Enable(menuRenderMode->FindItem(wxT("&Spiral In and Out v2")), TRUE);
+   menuRenderMode->Enable(menuRenderMode->FindItem(wxT("&Spiral In")), TRUE);
+   menuRenderMode->Enable(menuRenderMode->FindItem(wxT("&Sequence")), TRUE);
+
+   wxMenu* menuDivision = GetMenuBar()->GetMenu(4);
    menuDivision->Enable(menuDivision->FindItem(wxT("&8x8 Grid" )), TRUE );
    menuDivision->Enable(menuDivision->FindItem(wxT("&1x1 Grid" )), TRUE );
    menuDivision->Enable(menuDivision->FindItem(wxT("&2x2 Grid")), TRUE );
    menuDivision->Enable(menuDivision->FindItem(wxT("&4x4 Grid")), TRUE );
    menuDivision->Enable(menuDivision->FindItem(wxT("&64x64 Grid")), TRUE );
+
+   wxMenu* menuRenderDisplay = GetMenuBar()->GetMenu(5);
+   menuRenderDisplay->Enable(menuRenderDisplay->FindItem(wxT("&Every Pixel" )), TRUE );
+   menuRenderDisplay->Enable(menuRenderDisplay->FindItem(wxT("&Every Row" )), TRUE);
+   menuRenderDisplay->Enable(menuRenderDisplay->FindItem(wxT("&End of Job")), TRUE);
+
+   wxMenu* menuSamples = GetMenuBar()->GetMenu(6);
+   menuSamples->Enable(menuSamples->FindItem(wxT("&Set by Build" )), TRUE);
+   menuSamples->Enable(menuSamples->FindItem(wxT("&1" )), TRUE );
+   menuSamples->Enable(menuSamples->FindItem(wxT("&2" )), TRUE );
+   menuSamples->Enable(menuSamples->FindItem(wxT("&4" )), TRUE );
+   menuSamples->Enable(menuSamples->FindItem(wxT("&8" )), TRUE );
+   menuSamples->Enable(menuSamples->FindItem(wxT("&16" )), TRUE );
+   menuSamples->Enable(menuSamples->FindItem(wxT("&24" )), TRUE );
+   menuSamples->Enable(menuSamples->FindItem(wxT("&32" )), TRUE );
+   menuSamples->Enable(menuSamples->FindItem(wxT("&64" )), TRUE );
+   menuSamples->Enable(menuSamples->FindItem(wxT("&128" )), TRUE );
+   menuSamples->Enable(menuSamples->FindItem(wxT("&256" )), TRUE );
    
    wxMenu* menuFile = GetMenuBar()->GetMenu(0);
    menuFile->Enable(menuFile->FindItem(wxT("&Open...")), TRUE);
@@ -438,10 +742,10 @@ void WorkerThread::OnJob()
 			//Sleep(1000); // wait a while
 			throw tJOB::eID_THREAD_EXIT; // confirm exit command
 		  case tJOB::eID_THREAD_JOB: // process a standard job	
-			if(world->camera_ptr != NULL)
-				world->camera_ptr->render_scene(*world, job.theJob); // Render Camera based scene		
+			if(world->camera_ptr != NULL)			
+				world->camera_ptr->render_scene(*world, job.theJobs);
 			else
-				world->render_scene(job.theJob);					 // Orthographic render:
+				world->render_scene(job.theJobs);					 // Orthographic render:
 			queue->Report(tJOB::eID_THREAD_JOB, wxString::Format(wxT("Job #%s done."), job.arg.c_str()), id); // report successful completion
 			break;
 		  case tJOB::eID_THREAD_JOBERR: // process a job that terminates with an error
@@ -461,7 +765,7 @@ void WorkerThread::OnJob()
 
 RenderCanvas::RenderCanvas(wxWindow *parent)
    : wxScrolledWindow(parent), theImage(NULL), w(NULL), timer(NULL), updateTimer(this, ID_RENDER_UPDATE), totalThreads(1),
-   threads(NULL), queue(NULL), threadNumber(0), divisions(0), divisionsNumber(0), manager(NULL), theThreads(NULL)
+   threads(NULL), queue(NULL), threadNumber(0), divisions(0), divisionsNumber(0), manager(NULL), theThreads(NULL), renderMode(SPIRAL_IN_AND_OUT2), renderDisplay(EVERY_PIXEL), samples(0)
 {
    SetOwnBackgroundColour(wxColour(143,144,150));
    queue=new Queue(this);
@@ -703,8 +1007,8 @@ void RenderCanvas::renderStart(void)
     wxGetApp().SetStatusText( wxT( "Building world..." ) );
    
     w->build();
-    wxGetApp().SetStatusText( wxT( "Rendering..." ) );
-   
+    wxGetApp().SetStatusText( wxT( "Preparing Environment..." ) );
+
   	int hres = w->vp.hres;
 	int vres = w->vp.vres;
 	int offset = 0;
@@ -713,6 +1017,15 @@ void RenderCanvas::renderStart(void)
 		offset = w->camera_ptr->get_offset();
 		hres += offset;
 	}
+
+
+	// Check samples	
+	int currentSamples = w->vp.num_samples;
+	if(samples != currentSamples && samples != 0)
+	{
+		w->vp.set_samples(samples);
+	}
+
 
 	pixelsRendered = 0;
     pixelsToRender = hres * vres;
@@ -724,13 +1037,28 @@ void RenderCanvas::renderStart(void)
     dc.SetBackground(*wxGREY_BRUSH);
     dc.Clear();
    
-    wxBitmap tile(bg_xpm);
+	if(renderMode == this->GRID || renderMode == this->SPIRAL_IN ||  renderMode == this->SPIRAL_OUT || renderMode == this->SPIRAL_IN_AND_OUT )
+	{
+		wxBitmap tile(bg_xpm);
    
-    for(int x = 0; x < hres; x += 16)
-    {
-       for(int y = 0; y < vres; y += 16)
-          dc.DrawBitmap(tile, x, y, FALSE);
-    }
+		for(int x = 0; x < hres; x += 16)
+		{
+		   for(int y = 0; y < vres; y += 16)
+			  dc.DrawBitmap(tile, x, y, FALSE);
+		}	
+	}
+	
+	else if(renderMode == this->RANDOM || renderMode == this->SEQUENCE || renderMode == this->SPIRAL_IN_AND_OUT2)
+	{
+		wxBitmap tile(black_xpm);
+   
+		for(int x = 0; x < hres; x += 16)
+		{
+		   for(int y = 0; y < vres; y += 16)
+			  dc.DrawBitmap(tile, x, y, FALSE);
+		}	
+	}
+
    
 	dc.SelectObject(wxNullBitmap);
    
@@ -740,15 +1068,13 @@ void RenderCanvas::renderStart(void)
     updateTimer.Start(250);
  
     timer = new wxStopWatch();  //start timer 
-
-    totalThreads = wxThread::GetCPUCount(); // get the total amout of cores for the system
-    if(threadNumber == 0)
-		threadNumber = totalThreads;        			
+    
 
     manager = new RenderThread(this);	// RenderThread communicates with the canvas rendered pixels
 	manager->Create();
 	manager->Run();
-	manager->SetPriority(30);
+	manager->SetPriority(40);
+	manager->SetRenderDisplay(this->renderDisplay);
 	w->paintArea = manager;				// Threads communicate with the manager via the World
 
 	if(divisionsNumber == 0)
@@ -757,48 +1083,239 @@ void RenderCanvas::renderStart(void)
 		divisions = divisionsNumber;
 	// else division will be what is set.
 
-	int jobWidth = w->vp.hres / divisions;
-	int jobHeight =  w->vp.vres / divisions;
+	totalThreads = wxThread::GetCPUCount(); // get the total amout of cores for the system
+    if(threadNumber == 0)
+		threadNumber = totalThreads;    
+	else if(threadNumber == 9000)
+		threadNumber = divisions*divisions;
+
+	
+	wxGetApp().SetStatusText( wxT( "Setting up Rendering Queue..." ) );
+	// Assign job division sizes
+	int jobWidth = 0;
+	int jobHeight = 0;
+
+	if(w->vp.hres < divisions)	
+		jobWidth = w->vp.hres;
+	else
+		jobWidth = w->vp.hres / divisions;
+	if(w->vp.vres < divisions)	
+		jobHeight = w->vp.vres;
+	else 
+		jobHeight = w->vp.vres / divisions;
+
 	float xRemainder = w->vp.hres % divisions;
-	float yRemainder = w->vp.vres % divisions;
+	float yRemainder = w->vp.vres % divisions;	
+	
+	if(renderMode == this->GRID ||
+	   renderMode == this->RANDOM ||
+	   renderMode == this->SEQUENCE ||
+	   renderMode == this->SPIRAL_IN || 
+	   renderMode == this->SPIRAL_OUT || 
+	   renderMode == this->SPIRAL_IN_AND_OUT ||
+	   renderMode == this->SPIRAL_IN_AND_OUT2 )
+	{
+		vector<Pixel> toRender;
+		toRender.reserve(pixelsToRender);			
 
-	int currentX = 0;
-	int currentY = 0;	
-	for(int y=0; y < divisions; y++)	
-	{	currentY = y * jobHeight;
-		for(int x=0; x < divisions; x++)
-		{	
-			currentX = x * jobWidth;
-			int iJob = rand();
-			PixelPoints current;
-			current.origin.x =currentX; current.origin.y = currentY;
-			current.end.x =currentX + jobWidth; current.end.y = currentY + jobHeight;
-			queue->AddJob(tJOB(tJOB::eID_THREAD_JOB, wxString::Format(wxT("%u"), iJob), current));
+		// Generate Points for Spiral
+		if(renderMode == this->SPIRAL_IN || renderMode == this->SPIRAL_OUT || renderMode == SPIRAL_IN_AND_OUT || renderMode == SPIRAL_IN_AND_OUT2)
+		{	int x = 0;
+			int y = 0;
+			int hres = w->vp.hres-1;
+			int vres = w->vp.vres-1;
+			toRender = spiral(x, y, hres, vres, RIGHT);
+			if(renderMode == SPIRAL_OUT)
+			{	
+				std::reverse(toRender.begin(), toRender.end()); // Reverse if spiral going out from center			
+			}	
+			else if(renderMode == SPIRAL_IN_AND_OUT)
+			{
+				std::vector<Pixel> center;
+				std::vector<Pixel> bounds;
+				center.reserve(toRender.size()/2);
+				bounds.reserve(toRender.size()/2);
+				int toSizeD2 = toRender.size()/2;
+				int counter = 0;
+				while (counter<toSizeD2)
+				{
+					bounds.push_back(toRender[counter++]);			
+				}		
+
+				std::reverse(toRender.begin(), toRender.end());
+				counter = 0;
+				while (counter<toSizeD2)
+				{
+					center.push_back(toRender[counter++]);					
+				}		
+				
+				toRender.clear();
+				int centerSize = center.size()-1;
+				int boundsSize = bounds.size()-1;
+				int boundsCounter = 0;		
+				int centerCounter = 0;	
+				for(counter = 0; counter<toSizeD2; counter++)
+				{	if(centerCounter <= centerSize)
+						toRender.push_back(center[centerCounter++]);					
+					if(boundsCounter <= boundsSize )
+						toRender.push_back(bounds[boundsCounter++]);					
+				}
+			}
+			else if(renderMode == SPIRAL_IN_AND_OUT2)
+			{
+				// Spiral Two Ways
+				std::vector<Pixel> center;
+				std::vector<Pixel> bounds;
+				center.reserve(toRender.size()/2);
+				bounds.reserve(toRender.size()/2);
+				int toSize = toRender.size();
+				int counter = 0;
+				while (counter<toSize)
+				{	
+					center.push_back(toRender[counter++]);
+					if(counter<toSize)
+						bounds.push_back(toRender[counter++]);
+				}				
+				toRender.clear();
+				int centerSize = center.size()-1;
+				int boundsSize = bounds.size()-1;
+				int boundsCounter = 0;
+				int toSizeD2 = toSize/2;
+				for(counter = 0; counter<toSizeD2; counter++)
+				{	if(centerSize >= 0)
+						toRender.push_back(center[centerSize--]);
+					else
+						int kkkk = 0;
+					if(boundsCounter <= boundsSize )
+						toRender.push_back(bounds[boundsCounter++]);				
+					else
+						int kkkk = 0;
+				}
+			}
 		}
+		else if(renderMode == this->GRID)  //  Grid
+		{
+			int currentX = 0;
+			int currentY = 0;	
+			for(int y=0; y < divisions; y++)	
+			{	currentY = y * jobHeight;
+				for(int x=0; x < divisions; x++)
+				{	
+					currentX = x * jobWidth;				
+					int xEnd = currentX + jobWidth;
+					int yEnd = currentY + jobHeight;	
+					for(int iy = currentY; iy<yEnd; iy++)					
+					{
+						for(int ix = currentX; ix<xEnd; ix++)
+						{
+							toRender.push_back(Pixel(ix, iy));
+						}
+					}
+				}
 
-	}	
-	
+			}
+			if(yRemainder != 0)
+			{		int yStart = w->vp.vres - yRemainder;
+					int xStart = 0;
+					int yEnd = w->vp.vres;
+					int xEnd = w->vp.hres;
+					for(int iY = yStart; iY < yEnd; iY++)
+					{
+						for(int iX = xStart; iX < xEnd; iX++)
+						{
+							toRender.push_back(Pixel(iX, iY));
+						}
+					}					
+			}
+			if(xRemainder != 0)
+			{		int yStart = 0;
+					int xStart = w->vp.hres - xRemainder;
+					int yEnd = w->vp.vres;
+					int xEnd = w->vp.hres;
+					for(int iX = xStart; iX < xEnd; iX++)					
+					{
+						for(int iY = yStart; iY < yEnd; iY++)
+						{
+							toRender.push_back(Pixel(iX, iY));
+						}
+					}
+			}
+		}
+		else // if not spiral (Random, Sequence)
+		{
+			for(int y=0; y < w->vp.vres; y++)	
+			{
+				for(int x=0; x < w->vp.hres; x++)
+				{	
+					toRender.push_back(Pixel(x, y));
+				}
+			}	
+		}
+				
+		if(renderMode == this->RANDOM)
+		{	
+			std::random_shuffle(toRender.begin(), toRender.end());		
+		}
+		
+		int totalQ = jobWidth * jobHeight;
 
-	if(yRemainder != 0)
-	{		int iJob = rand();
-			PixelPoints current;
-			current.origin.x = 0; current.origin.y = w->vp.vres - yRemainder;
-			current.end.x = w->vp.hres; current.end.y = w->vp.vres;
-			queue->AddJob(tJOB(tJOB::eID_THREAD_JOB, wxString::Format(wxT("%u"), iJob), current));
+		int id = 0;	
+
+		vector<Pixel> current;
+		current.reserve(totalQ);
+		for(int y=0; y < divisions; y++)	
+		{
+			for(int x=0; x < divisions; x++)
+			{		
+				if(id < toRender.size())
+				{
+					for(int i = 0; i<totalQ; i++)
+					{	
+						if(id >= toRender.size())
+							break;
+						current.push_back(toRender[id]);					
+						id++;
+					}
+
+					int iJob = rand();
+					queue->AddJob(tJOB(tJOB::eID_THREAD_JOB, wxString::Format(wxT("%u"), iJob), current));
+					current.clear();
+				}
+			}		
+
+		}			
+		if(id < pixelsToRender)
+		{
+			while(id < pixelsToRender)
+			{
+				for(int i = 0; i < totalQ; i++)
+				{
+					current.push_back(toRender[id]);
+					id++;
+					if(id == pixelsToRender)
+						i = totalQ;
+				}
+				int iJob = rand();
+				queue->AddJob(tJOB(tJOB::eID_THREAD_JOB, wxString::Format(wxT("%u"), iJob), current));
+				current.clear();
+			}
+		}
+		toRender.clear();			
 	}
-	if(xRemainder != 0)
-	{		int iJob = rand();
-			PixelPoints current;
-			current.origin.x = w->vp.hres - xRemainder; current.origin.y = 0;
-			current.end.x = w->vp.hres; current.end.y = w->vp.vres;
-			queue->AddJob(tJOB(tJOB::eID_THREAD_JOB, wxString::Format(wxT("%u"), iJob), current)); 
-	}
+
 	
+	/*if(w->photontracer_ptr != NULL)
+	{	wxGetApp().SetStatusText( wxT( "Building PhotonMap..." ) );
+		w->generate_photonmap();
+	}*/
+		
 
 	//threadNumber = divisions*divisions;		// make the number of threads the number of jobs
 	//threadNumber = 4;							// simulate quad core cpu
 	//threadNumber = 2;							// simulate dual core cpu
 	//threadNumber = 1;							// simulate singe core cpu
+	if(threadNumber >= 1000)
+		threadNumber = 1000;
     for(int i=0; i< threadNumber; i++)
 	{	
 #if SAMPLE_HACK>0
@@ -809,6 +1326,96 @@ void RenderCanvas::renderStart(void)
 #endif
 		OnStart();		
 	}
+	wxGetApp().SetStatusText( wxT( "Rendering..." ) );
+
+}
+
+std::vector<Pixel> RenderCanvas::spiral(int &x, int &y, int &width, int &height, Direction direction)
+{
+	vector<Pixel> current;
+	Direction newDirection = RIGHT;
+	int value = 0;
+	/*bool end = false;
+	if(height != width)
+	{
+		if(height <= 1 || width <= 1)
+		{
+			if(height > width)
+			{
+				width = 0;
+				height = 0;
+				return current;
+			}
+			else if(width > height)
+			{
+				width = 0;
+				height = 0;
+				return current;
+			}
+		}
+	}*/
+
+	switch(direction)
+	{
+		case RIGHT:
+			
+			value = width;
+			for(; x<=value; x++)
+			{
+				current.push_back(Pixel(x,y));
+			}			
+			x -= 1;
+			y += 1;
+			newDirection = UP;
+			break;
+		case UP:			
+			value = height;
+			for(; y<=value; y++)
+			{
+				current.push_back(Pixel(x,y));
+			}			
+			y -= 1;
+			newDirection = LEFT;
+			break;
+		case LEFT:
+			value = w->vp.hres - (width + 1);
+			while(x>value)
+			{	--x;
+				current.push_back(Pixel(x,y));				
+			}
+			if(width >= 1)
+				width -= 1;
+			else
+				int i = 0;
+			newDirection = DOWN;
+			break;
+		case DOWN:
+			if(height >= 1)
+			{	
+				height -= 1;
+			}
+			else
+				int i = 0;
+			value = w->vp.vres - (height + 1);
+			while(y>value)
+			{	--y;
+				current.push_back(Pixel(x,y));
+			}			
+			newDirection = RIGHT;
+			x += 1;
+			break;
+	}	
+	if(!(width <= 0 && height <= 0) && current.size() != 0)
+	{
+		vector<Pixel> addVector;
+		addVector = spiral(x,y, width, height, newDirection);
+		current.insert(current.end(), addVector.begin(), addVector.end());
+	}
+	else
+	{
+     int temp = 0;
+	}
+	return current;
 }
 
 void RenderCanvas::OnStart(wxCommandEvent& WXUNUSED(event)) // start one worker thread
@@ -816,13 +1423,14 @@ void RenderCanvas::OnStart(wxCommandEvent& WXUNUSED(event)) // start one worker 
     int id = threads.empty()?1:threads.back()+1;
     threads.push_back(id);
 	WorkerThread* thread=new WorkerThread(queue, this, w, id); // create a new worker thread, increment thread counter (this implies, thread will start OK)
-    theThreads.push_back(thread);
-	thread->SetPriority(20);
+    theThreads.push_back(thread);	
 	if (thread->Run() != wxTHREAD_NO_ERROR )
     {	wxLogError("Can't create the worker thread!");
 		delete theThreads.back();
 		threads.back() = NULL;
 		threads.pop_back(); }
+	else
+		thread->SetPriority(20);
 }
 
 void RenderCanvas::OnStart() // start one worker thread
@@ -836,7 +1444,7 @@ void RenderCanvas::OnStart() // start one worker thread
 	WorkerThread* thread=new WorkerThread(queue, this, w, id);
 #endif
 	theThreads.push_back(thread);
-	thread->SetPriority(20);
+	thread->SetPriority(40);
 	if (thread->Run() != wxTHREAD_NO_ERROR )
     {	wxLogError("Can't create the thread!");
 		delete theThreads.back();
@@ -980,9 +1588,19 @@ bool RenderThread::Stop() const
    return stop;
 }
 
+RenderDisplay RenderThread::Display() const
+{
+   return renderDisplay;
+}
+
 void RenderThread::StopRendering()
 {
 	stop = true;
+}
+
+void RenderThread::SetRenderDisplay(RenderDisplay display)
+{
+	renderDisplay = display;
 }
 
 void *RenderThread::Entry()

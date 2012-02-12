@@ -7,6 +7,8 @@
 #include "Point3D.h"
 #include "Vector3D.h"
 #include "Multithread.h"
+#include <vector>
+
 
 class World;  // can't #include "World" here because World contains a camera pointer
 
@@ -28,11 +30,11 @@ class Camera {
 		virtual void													
 		render_scene(const World& w) = 0;
 
-		virtual void													
-		render_scene(const World& w, const PixelPoints& grid) = 0;
+		virtual void	
+		render_scene(const World& w, const std::vector<Pixel>& pixels) = 0;	
 		
 		virtual void
-		render_stereo(const World& w, float x, int pixel_offset, const PixelPoints& grid); 
+		render_stereo(const World& w, float x, int pixel_offset, const std::vector<Pixel>& pixels); 
 		
 		void
 		set_eye(const Point3D& p);
@@ -166,7 +168,7 @@ Camera::get_offset() {
 
 // ----------------------------------------------------------------- render_stereo
 inline void
-Camera::render_stereo(const World& w, float x, int pixel_offset, const PixelPoints& grid)
+Camera::render_stereo(const World& w, float x, int pixel_offset, const std::vector<Pixel>& pixels)
 {}
 
 #endif

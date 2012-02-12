@@ -27,6 +27,7 @@
 #include "Camera.h"
 #include "Light.h"
 #include "Ambient.h"
+#include "RandomNumber.h"
  
 using namespace std;
 
@@ -43,13 +44,17 @@ class World {
 		Camera*						camera_ptr;		
 		Sphere 						sphere;		// for Chapter 3 only
 		vector<SmartPointer<GeometricObject>> objects;		
-		vector<Light*> 				lights;
+		vector<SmartPointer<Light>> 				lights;
 		
-		RenderThread* 				paintArea; 	//connection to skeleton - wxRaytracer.h			
+		RenderThread* 				paintArea; 	//connection to skeleton - wxRaytracer.h	
+		RandomNumber*               random;
 
 	public:
 		World(void);
 		~World();
+
+		void 
+		add_object(SmartPointer<GeometricObject> object_ptr);
 								
 		void 
 		add_object(GeometricObject* object_ptr);
@@ -70,7 +75,7 @@ class World {
 		render_scene(void) const;
 		
 		void 												
-		render_scene(const PixelPoints& grid) const;
+		render_scene(const std::vector<Pixel>& pixels) const;
 						
 		RGBColor
 		max_to_one(const RGBColor& c) const;
@@ -87,8 +92,24 @@ class World {
 		ShadeRec
 		hit_objects(const Ray& ray);
 
-		bool
-		StopRendering() const; // used to stop rendering threads OnQuit
+		bool stop_rendering() const;
+
+		RenderDisplay World::render_display() const;
+
+		float 
+		rand_float();
+
+		float
+		rand_float(int l, float h);
+
+		unsigned long 
+		rand_int();
+
+		unsigned long
+		rand_int(int l, int h);	
+
+		void
+		set_rand_seed(int seed);	
 						
 	private:
 		
@@ -101,6 +122,12 @@ class World {
 
 
 // ------------------------------------------------------------------ add_object
+
+inline void 
+World::add_object(SmartPointer<GeometricObject> object_ptr) {  
+	objects.push_back(object_ptr);	
+
+}
 
 inline void 
 World::add_object(GeometricObject* object_ptr) {  
@@ -135,6 +162,31 @@ World::set_camera(Camera* c_ptr) {
 		camera_ptr = NULL;
 	}
 	camera_ptr = c_ptr;
+}
+
+inline float World::rand_float()
+{
+	return random->rand_float();
+}
+
+inline float World::rand_float(int l, float h)
+{
+	return random->rand_float(l, h);
+}
+
+inline unsigned long World::rand_int()
+{
+	return random->rand_int();
+}
+
+inline unsigned long World::rand_int(int l, int h)
+{
+	return random->rand_int(l, h);
+}
+
+inline void World::set_rand_seed(int seed)
+{
+	random->set_rand_seed(seed);
 }
 
 #endif
