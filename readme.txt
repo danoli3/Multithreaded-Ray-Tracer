@@ -33,7 +33,7 @@ How to Extend a project built with the original Skeleton?
 ----------------------------------------------
 1. ) Download and extract the Multithreaded Skeleton
 2. ) Use the Multithreaded Solution as the main project and start adding your custom made classes and files to the project directory/solution.
-3. ) You will need to Merge and Update the Pinhole Camera class using the example function Pinhole::render_scene(const World& w, const PixelPoints& grid)
+3. ) You will need to Merge and Update the Pinhole Camera class using the example function Pinhole::render_scene(const World& w, const std::vector<Pixel>& pixels)
 3.a) Note the implementation of this function with the skeleton is the basic type, you need to update the Sampler and other variables.
 4. ) Make sure if you are using any compound objects to read the Notes below:
 
@@ -48,7 +48,7 @@ Notes on implementation
 Q: ) What's changed from the Original Skeleton?
 A: ) The following files have the main changes from the Skeleton:
 		User Interface/
-		  -wxraytracer.h/cpp (Interface changes, Queue System added, Multithreading added, fixed crashes) 
+		  -wxraytracer.h/cpp (Interface changes, Queue System added, Multithreading added, fixed crashes, Pause / End now working) 
 		World/
 		  -World.h/cpp (Changes for Multithreading)
 		Utilities/
