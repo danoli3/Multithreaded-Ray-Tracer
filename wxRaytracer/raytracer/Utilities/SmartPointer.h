@@ -47,7 +47,7 @@ public:
 			r.pointer->increment();
         if (pointer && pointer->decrement() == 0)
 		{	delete pointer;
-			pointer = NULL;
+			pointer = 0;
 		}
         pointer = r.pointer;
         return (*this);
