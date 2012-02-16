@@ -59,7 +59,7 @@ class GeometricObject : public ReferenceCount {
 
 inline Material* 
 GeometricObject::get_material(void) const {
-	return (material_ptr.Get());
+	return (material_ptr.get_pointer());
 }
 
 #endif

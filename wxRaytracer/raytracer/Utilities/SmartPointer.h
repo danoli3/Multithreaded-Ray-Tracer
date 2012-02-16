@@ -95,7 +95,7 @@ template <typename T> class SmartPointer {
 
 		// Be careful with this one... full access to delete the pointer if not careful
 		T*
-		Get(void) const	{
+		get_pointer(void) const	{
 			return (pointer); 
 		}
 
