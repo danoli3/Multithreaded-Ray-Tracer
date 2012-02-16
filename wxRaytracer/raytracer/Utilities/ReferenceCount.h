@@ -2,8 +2,8 @@
 #pragma once
 #endif
 
-#ifndef __REFENCE_COUNTING__
-#define __REFENCE_COUNTING__
+#ifndef __REFERENCE_COUNT__
+#define __REFERENCE_COUNT__
 
 //  Copyright (C) 2011 Daniel Rosser
 //	This program is free software: you can redistribute it and/or modify
@@ -24,32 +24,30 @@
 
 
 class ReferenceCount {
-public:
-    ReferenceCount(void) 
-		: references(0) { }
+	public:
+		ReferenceCount(void) 
+			: references(0) { }
 
-	void increment(void);
+		void increment(void);
 
-	int decrement(void);    
-private:
+		int decrement(void);  
+	  
+	private:
+		ReferenceCount(const ReferenceCount& rf);	// this function cannot be defined
 
-    ReferenceCount( const ReferenceCount& rf);
+		ReferenceCount&								// this function cannot be defined
+		operator= (const ReferenceCount& rhs);
 
-    ReferenceCount& 
-	operator= ( const ReferenceCount& rhs);
-
-	int references;
+		int references;
 };
 
 inline void
-ReferenceCount::increment(void)
-{
+ReferenceCount::increment(void) {
 	references++;
 }
 
 inline int
-ReferenceCount::decrement(void)
-{
+ReferenceCount::decrement(void) {
 	return (--references);
 }
 

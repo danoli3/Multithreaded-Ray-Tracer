@@ -26,87 +26,89 @@
 
 // SmartPointer
 template <typename T> class SmartPointer {
-public:
-    // SmartPointer Public Methods
-    SmartPointer(T* ptr = NULL) {
-        pointer = ptr;
-        if (pointer) 
-			pointer->increment();
-    }
-
-    SmartPointer(const SmartPointer<T>& r) {   
-		pointer = r.pointer;
-		if (pointer)
-			pointer->increment();			
-
-    }
-
-    SmartPointer&
-	operator= (const SmartPointer<T>& r) {
-		if (r.pointer) 
-			r.pointer->increment();
-        if (pointer && pointer->decrement() == 0)
-		{	delete pointer;
-			pointer = 0;
+	public:
+		// SmartPointer Public Methods
+		SmartPointer(T* ptr = NULL) {
+			pointer = ptr;
+			if (pointer) 
+				pointer->increment();
 		}
-        pointer = r.pointer;
-        return (*this);
-    }
 
-    SmartPointer& 
-	operator= (T* ptr)	{
-		if (ptr)
-			ptr->increment();
-        if (pointer && pointer->decrement() == 0)
-		{	delete pointer;
-			pointer = NULL;
+		SmartPointer(const SmartPointer<T>& r) {   
+			pointer = r.pointer;
+			if (pointer)
+				pointer->increment();			
 		}
-        pointer = ptr;
-        return (*this);
-    }
 
-    ~SmartPointer(void) {
-        if (pointer && pointer->decrement() == 0)
-        {    delete pointer;
+		SmartPointer&
+		operator= (const SmartPointer<T>& r) {
+			if (r.pointer) 
+				r.pointer->increment();
+			if (pointer && pointer->decrement() == 0) {
+				delete pointer;
+				pointer = NULL;
+			}
+			pointer = r.pointer;
+			return (*this);
+		}
+
+		SmartPointer& 
+		operator= (T* ptr)	{
+			if (ptr)
+				ptr->increment();
+			if (pointer && pointer->decrement() == 0) {
+				delete pointer;
+				pointer = NULL;
+			}
+			pointer = ptr;
+			return (*this);
+		}
+
+		~SmartPointer(void) {
+			if (pointer && pointer->decrement() == 0) { 
+			   delete pointer;
 			 pointer = 0;
+			}
 		}
-    }
 
-	void
-	delete_now(void);
+		void
+		delete_now(void);
 
-    T* 
-	operator->(void) {
-		return pointer; }	
+		T* 
+		operator->(void) {
+			return (pointer); 
+		}	
 
-    const T*
-	operator->(void) const {
-		return pointer; }
+		const T*
+		operator->(void) const {
+			return (pointer); 
+		}
 
-    operator bool(void) const {
-		return pointer != NULL; }
+		operator bool(void) const {
+			return (pointer != NULL); 
+		}
 
-    const T*
-	Pointer(void) const	{ 
-		return pointer; }
+		const T*
+		Pointer(void) const	{ 
+			return (pointer); 
+		}
 
-	// Becareful with this one... full access to delete the pointer if not careful
-	T*
-	Get(void) const	{
-		return pointer; }
+		// Be careful with this one... full access to delete the pointer if not careful
+		T*
+		Get(void) const	{
+			return (pointer); 
+		}
 
-
-
-private:
-    T* pointer;
+	private:
+		T* pointer;
 };
 
 template <typename T>
 inline void
 SmartPointer<T>::delete_now(void) {
-    if (pointer && pointer->decrement() == 0)
-    {    delete pointer;
-		 pointer = NULL;
+    if (pointer && pointer->decrement() == 0) { 
+		delete pointer;
+		pointer = NULL;
 	}
 }
 
