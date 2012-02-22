@@ -76,6 +76,8 @@ BEGIN_EVENT_TABLE( wxraytracerFrame, wxFrame )
    EVT_MENU( Menu_Division_Single, wxraytracerFrame::OnDivisionSingle )
    EVT_MENU( Menu_Division_Dual, wxraytracerFrame::OnDivisionDual )
    EVT_MENU( Menu_Division_Quad, wxraytracerFrame::OnDivisionQuad )
+   EVT_MENU( Menu_Division_16, wxraytracerFrame::OnDivision16 )
+   EVT_MENU( Menu_Division_32, wxraytracerFrame::OnDivision32 )
    EVT_MENU( Menu_Division_64, wxraytracerFrame::OnDivision64 )
    EVT_MENU( Menu_Samples_Build, wxraytracerFrame::OnSamples_Build )
    EVT_MENU( Menu_Samples_1, wxraytracerFrame::OnSamples_1 )
@@ -142,13 +144,15 @@ wxraytracerFrame::wxraytracerFrame(const wxPoint& pos, const wxSize& size)
 
    wxMenu *menuDivisions = new wxMenu;
 
-   menuDivisions->AppendRadioItem(Menu_Division_Default , wxT("&8x8 Grid" ));
-   menuDivisions->AppendRadioItem(Menu_Division_Single , wxT("&1x1 Grid" ));
-   menuDivisions->AppendRadioItem(Menu_Division_Dual, wxT("&2x2 Grid"));
-   menuDivisions->AppendRadioItem(Menu_Division_Quad, wxT("&4x4 Grid"));
-   menuDivisions->AppendRadioItem(Menu_Division_64, wxT("&64x64 Grid"));
+   menuDivisions->AppendRadioItem(Menu_Division_Default , wxT("&64 Jobs (8 x 8)" ));
+   menuDivisions->AppendRadioItem(Menu_Division_Single , wxT("&1 Job (1 x 1)" ));
+   menuDivisions->AppendRadioItem(Menu_Division_Dual, wxT("&4 Jobs (2 x 2)"));
+   menuDivisions->AppendRadioItem(Menu_Division_Quad, wxT("&16 Jobs (4 x 4)"));
+   menuDivisions->AppendRadioItem(Menu_Division_16, wxT("&256 Jobs (16 x 16)"));
+   menuDivisions->AppendRadioItem(Menu_Division_32, wxT("&1024 Jobs (32 x 32)"));
+   menuDivisions->AppendRadioItem(Menu_Division_64, wxT("&4096 Jobs (64 x 64)"));
 
-   menuDivisions->Check(menuDivisions->FindItem(wxT("&8x8 Grid" )), TRUE );   
+   menuDivisions->Check(menuDivisions->FindItem(wxT("&64 Jobs (8 x 8)")), TRUE );   
 
   //---------------------------------------- RenderDisplay Menu
 
@@ -180,7 +184,7 @@ wxraytracerFrame::wxraytracerFrame(const wxPoint& pos, const wxSize& size)
    wxMenuBar *menuBar = new wxMenuBar;
    menuBar->Append(menuFile  , wxT("&File"  ));
    menuBar->Append(menuRender, wxT("&Render"));
-   menuBar->Append(menuMultithread, wxT("&Multithreading"));
+   menuBar->Append(menuMultithread, wxT("&Multi-Threading"));
    menuBar->Append(menuRenderMode, wxT("&RenderMode"));
    menuBar->Append(menuDivisions, wxT("&Divisions"));
    menuBar->Append(menuRenderDisplay, wxT("&Display"));
@@ -389,7 +393,7 @@ void wxraytracerFrame::OnRenderModeSequence( wxCommandEvent& WXUNUSED( event ) )
 void wxraytracerFrame::OnDivisionDefault( wxCommandEvent& WXUNUSED( event ) )
 {
    wxMenu* menu = GetMenuBar()->GetMenu(4);
-   menu->Check(menu->FindItem(wxT("&8x8 Grid")), TRUE);
+   menu->Check(menu->FindItem(wxT("&64 Jobs (8 x 8)")), TRUE);
    
    canvas->divisionsNumber = 0;
 }
@@ -397,7 +401,7 @@ void wxraytracerFrame::OnDivisionDefault( wxCommandEvent& WXUNUSED( event ) )
 void wxraytracerFrame::OnDivisionSingle( wxCommandEvent& WXUNUSED( event ) )
 {
    wxMenu* menu = GetMenuBar()->GetMenu(4);
-   menu->Check(menu->FindItem(wxT("&1x1 Grid")), TRUE);
+   menu->Check(menu->FindItem(wxT("&1 Job (1 x 1)")), TRUE);
    
    canvas->divisionsNumber = 1;
 }
@@ -405,7 +409,7 @@ void wxraytracerFrame::OnDivisionSingle( wxCommandEvent& WXUNUSED( event ) )
 void wxraytracerFrame::OnDivisionDual( wxCommandEvent& WXUNUSED( event ) )
 {
    wxMenu* menu = GetMenuBar()->GetMenu(4);
-   menu->Check(menu->FindItem(wxT("&2x2 Grid")), TRUE);
+   menu->Check(menu->FindItem(wxT("&4 Jobs (2 x 2)")), TRUE);
    
    canvas->divisionsNumber = 2;
 }
@@ -414,15 +418,31 @@ void wxraytracerFrame::OnDivisionDual( wxCommandEvent& WXUNUSED( event ) )
 void wxraytracerFrame::OnDivisionQuad( wxCommandEvent& WXUNUSED( event ) )
 {
    wxMenu* menu = GetMenuBar()->GetMenu(4);
-   menu->Check(menu->FindItem(wxT("&4x4 Grid")), TRUE);
+   menu->Check(menu->FindItem(wxT("&16 Jobs (4 x 4)")), TRUE);
    
    canvas->divisionsNumber = 4;
+}
+
+void wxraytracerFrame::OnDivision16( wxCommandEvent& WXUNUSED( event ) )
+{
+   wxMenu* menu = GetMenuBar()->GetMenu(4);
+   menu->Check(menu->FindItem(wxT("&256 Jobs (16 x 16)")), TRUE);
+   
+   canvas->divisionsNumber = 16;
+}
+
+void wxraytracerFrame::OnDivision32( wxCommandEvent& WXUNUSED( event ) )
+{
+   wxMenu* menu = GetMenuBar()->GetMenu(4);
+   menu->Check(menu->FindItem(wxT("&1024 Jobs (32 x 32)")), TRUE);
+   
+   canvas->divisionsNumber = 32;
 }
 
 void wxraytracerFrame::OnDivision64( wxCommandEvent& WXUNUSED( event ) )
 {
    wxMenu* menu = GetMenuBar()->GetMenu(4);
-   menu->Check(menu->FindItem(wxT("&64x64 Grid")), TRUE);
+   menu->Check(menu->FindItem(wxT("&64 Jobs (8 x 8)")), TRUE);
    
    canvas->divisionsNumber = 64;
 }

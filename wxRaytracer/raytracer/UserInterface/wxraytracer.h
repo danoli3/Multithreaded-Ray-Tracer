@@ -165,6 +165,8 @@ public:
    void OnDivisionSingle ( wxCommandEvent& event );
    void OnDivisionDual ( wxCommandEvent& event );
    void OnDivisionQuad ( wxCommandEvent& event );
+   void OnDivision16 ( wxCommandEvent& event );
+   void OnDivision32 ( wxCommandEvent& event );
    void OnDivision64 ( wxCommandEvent& event );
    void OnSamples_Build( wxCommandEvent& event );
    void OnSamples_1( wxCommandEvent& event );
@@ -212,6 +214,8 @@ enum
    Menu_Division_Single,
    Menu_Division_Dual,
    Menu_Division_Quad,
+   Menu_Division_16,
+   Menu_Division_32,
    Menu_Division_64,
    Menu_Samples_Build,
    Menu_Samples_1,
