@@ -69,6 +69,7 @@ BEGIN_EVENT_TABLE( wxraytracerFrame, wxFrame )
    EVT_MENU( Menu_Render_Mode_Spiral_In_And_Out, wxraytracerFrame::OnRenderModeSpiralInAndOut )
    EVT_MENU( Menu_Render_Mode_Spiral_In_And_Out2, wxraytracerFrame::OnRenderModeSpiralInAndOut2 )
    EVT_MENU( Menu_Render_Mode_Sequence, wxraytracerFrame::OnRenderModeSequence )
+   EVT_MENU( Menu_Render_Mode_Sequence2, wxraytracerFrame::OnRenderModeSequence2 )
    EVT_MENU( Menu_Render_Display_Pixel, wxraytracerFrame::OnRenderDisplayPixel )
    EVT_MENU( Menu_Render_Display_Row, wxraytracerFrame::OnRenderDisplayRow )
    EVT_MENU( Menu_Render_Display_Job, wxraytracerFrame::OnRenderDisplayJob )
@@ -119,26 +120,27 @@ wxraytracerFrame::wxraytracerFrame(const wxPoint& pos, const wxSize& size)
    //---------------------------------------- Multithread menu
    wxMenu *menuMultithread = new wxMenu;
 
-   menuMultithread->AppendRadioItem(Menu_Thread_Default , wxT("&Thread per system core" ));
+   menuMultithread->AppendRadioItem(Menu_Thread_Default , wxT("&One Thread per system core" ));
    menuMultithread->AppendRadioItem(Menu_Thread_Single , wxT("&Single Thread" ));
    menuMultithread->AppendRadioItem(Menu_Thread_Dual, wxT("&Dual Threads"));
    menuMultithread->AppendRadioItem(Menu_Thread_Quad, wxT("&Quad Threads"));
-   menuMultithread->AppendRadioItem(Menu_Thread_Job, wxT("&Thread per Job"));
+   menuMultithread->AppendRadioItem(Menu_Thread_Job, wxT("&One Thread per Job"));
 
-   menuMultithread->Check(menuMultithread->FindItem(wxT("&Thread per system core" )), TRUE );   
+   menuMultithread->Check(menuMultithread->FindItem(wxT("&One Thread per system core" )), TRUE );   
  
    //---------------------------------------- RenderMode Menu
 
    wxMenu *menuRenderMode = new wxMenu;
+   menuRenderMode->AppendRadioItem(Menu_Render_Mode_Sequence2, wxT("&Sequence v2")); 
    menuRenderMode->AppendRadioItem(Menu_Render_Mode_Spiral_In_And_Out2, wxT("&Spiral In and Out v2"));
    menuRenderMode->AppendRadioItem(Menu_Render_Mode_Spiral_In_And_Out, wxT("&Spiral In and Out"));
    menuRenderMode->AppendRadioItem(Menu_Render_Mode_Spiral_Out, wxT("&Spiral Out"));  
    menuRenderMode->AppendRadioItem(Menu_Render_Mode_Spiral_In, wxT("&Spiral In"));
-   menuRenderMode->AppendRadioItem(Menu_Render_Mode_Sequence, wxT("&Sequence"));  
+   menuRenderMode->AppendRadioItem(Menu_Render_Mode_Sequence, wxT("&Sequence"));   
    menuRenderMode->AppendRadioItem(Menu_Render_Mode_Random, wxT("&Random"));  
    menuRenderMode->AppendRadioItem(Menu_Render_Mode_Grid , wxT("&Grid" ));
   
-   menuRenderMode->Check(menuRenderMode->FindItem(wxT("&Spiral In and Out v2" )), TRUE );  
+   menuRenderMode->Check(menuRenderMode->FindItem(wxT("&Sequence v2" )), TRUE );
 
    //---------------------------------------- Divisions Menu
 
@@ -288,7 +290,7 @@ void wxraytracerFrame::OnOpenFile( wxCommandEvent& WXUNUSED( event ) )
 void wxraytracerFrame::OnThreadDefault( wxCommandEvent& WXUNUSED( event ) )
 {
    wxMenu* menu = GetMenuBar()->GetMenu(2);
-   menu->Check(menu->FindItem(wxT("&Thread per system core" )), TRUE); 
+   menu->Check(menu->FindItem(wxT("&One Thread per system core" )), TRUE); 
    
    canvas->threadNumber = 0;
 }
@@ -320,7 +322,7 @@ void wxraytracerFrame::OnThreadQuad( wxCommandEvent& WXUNUSED( event ) )
 void wxraytracerFrame::OnThreadJob( wxCommandEvent& WXUNUSED( event ) )
 {
    wxMenu* menu = GetMenuBar()->GetMenu(2);
-   menu->Check(menu->FindItem(wxT("&Thread per Job")), TRUE);
+   menu->Check(menu->FindItem(wxT("&One Thread per Job")), TRUE);
    
   /* int divisions = canvas->divisionsNumber * canvas->divisionsNumber;
    if(divisions > 4096)  
@@ -385,6 +387,14 @@ void wxraytracerFrame::OnRenderModeSequence( wxCommandEvent& WXUNUSED( event ) )
    menu->Check(menu->FindItem(wxT("&Sequence")), TRUE);
    
    canvas->renderMode = canvas->SEQUENCE;
+}
+
+void wxraytracerFrame::OnRenderModeSequence2( wxCommandEvent& WXUNUSED( event ) )
+{
+   wxMenu* menu = GetMenuBar()->GetMenu(3);
+   menu->Check(menu->FindItem(wxT("&Sequence v2")), TRUE);
+   
+   canvas->renderMode = canvas->SEQUENCE2;
 }
 
 
@@ -549,11 +559,11 @@ void wxraytracerFrame::OnRenderStart( wxCommandEvent& WXUNUSED( event ) )
    menuFile->Enable(menuFile->FindItem(wxT( "&Save As...")), TRUE );
 
    wxMenu* menuThread = GetMenuBar()->GetMenu(2);
-   menuThread->Enable(menuThread->FindItem(wxT("&Thread per system core" )), FALSE );
+   menuThread->Enable(menuThread->FindItem(wxT("&One Thread per system core" )), FALSE );
    menuThread->Enable(menuThread->FindItem(wxT("&Single Thread" )), FALSE);
    menuThread->Enable(menuThread->FindItem(wxT("&Dual Threads")), FALSE);
    menuThread->Enable(menuThread->FindItem(wxT("&Quad Threads")), FALSE);
-   menuThread->Enable(menuThread->FindItem(wxT("&Thread per Job")), FALSE);
+   menuThread->Enable(menuThread->FindItem(wxT("&One Thread per Job")), FALSE);
 
    wxMenu* menuRenderMode = GetMenuBar()->GetMenu(3);
    menuRenderMode->Enable(menuRenderMode->FindItem(wxT("&Grid")), FALSE);
@@ -563,13 +573,16 @@ void wxraytracerFrame::OnRenderStart( wxCommandEvent& WXUNUSED( event ) )
    menuRenderMode->Enable(menuRenderMode->FindItem(wxT("&Spiral In and Out v2")), FALSE);
    menuRenderMode->Enable(menuRenderMode->FindItem(wxT("&Spiral In")), FALSE);
    menuRenderMode->Enable(menuRenderMode->FindItem(wxT("&Sequence")), FALSE);
+   menuRenderMode->Enable(menuRenderMode->FindItem(wxT("&Sequence v2")), FALSE);
 
    wxMenu* menuDivision = GetMenuBar()->GetMenu(4);
-   menuDivision->Enable(menuDivision->FindItem(wxT("&8x8 Grid" )), FALSE );
-   menuDivision->Enable(menuDivision->FindItem(wxT("&1x1 Grid" )), FALSE);
-   menuDivision->Enable(menuDivision->FindItem(wxT("&2x2 Grid")), FALSE);
-   menuDivision->Enable(menuDivision->FindItem(wxT("&4x4 Grid")), FALSE);
-   menuDivision->Enable(menuDivision->FindItem(wxT("&64x64 Grid")), FALSE);
+   menuDivision->Enable(menuDivision->FindItem(wxT("&64 Jobs (8 x 8)" )), FALSE );
+   menuDivision->Enable(menuDivision->FindItem(wxT("&1 Job (1 x 1)" )), FALSE);
+   menuDivision->Enable(menuDivision->FindItem(wxT("&4 Jobs (2 x 2)")), FALSE);
+   menuDivision->Enable(menuDivision->FindItem(wxT("&16 Jobs (4 x 4)")), FALSE);
+   menuDivision->Enable(menuDivision->FindItem(wxT("&256 Jobs (16 x 16)")), FALSE);
+   menuDivision->Enable(menuDivision->FindItem(wxT("&1024 Jobs (32 x 32)")), FALSE);
+   menuDivision->Enable(menuDivision->FindItem(wxT("&4096 Jobs (64 x 64)")), FALSE);
 
    wxMenu* menuRenderDisplay = GetMenuBar()->GetMenu(5);
    menuRenderDisplay->Enable(menuRenderDisplay->FindItem(wxT("&Every Pixel" )), TRUE );
@@ -627,11 +640,11 @@ void wxraytracerFrame::OnRenderCompleted( wxCommandEvent& event )
    menu->Enable(menu->FindItem(wxT("&Resume")), FALSE); 
 
    wxMenu* menuThread = GetMenuBar()->GetMenu(2);
-   menuThread->Enable(menuThread->FindItem(wxT("&Thread per system core" )), TRUE );
+   menuThread->Enable(menuThread->FindItem(wxT("&One Thread per system core" )), TRUE );
    menuThread->Enable(menuThread->FindItem(wxT("&Single Thread" )), TRUE);
    menuThread->Enable(menuThread->FindItem(wxT("&Dual Threads")), TRUE);
    menuThread->Enable(menuThread->FindItem(wxT("&Quad Threads")), TRUE);
-   menuThread->Enable(menuThread->FindItem(wxT("&Thread per Job")), TRUE);
+   menuThread->Enable(menuThread->FindItem(wxT("&One Thread per Job")), TRUE);
 
    wxMenu* menuRenderMode = GetMenuBar()->GetMenu(3);
    menuRenderMode->Enable(menuRenderMode->FindItem(wxT("&Grid")), TRUE);
@@ -641,13 +654,16 @@ void wxraytracerFrame::OnRenderCompleted( wxCommandEvent& event )
    menuRenderMode->Enable(menuRenderMode->FindItem(wxT("&Spiral In and Out v2")), TRUE);
    menuRenderMode->Enable(menuRenderMode->FindItem(wxT("&Spiral In")), TRUE);
    menuRenderMode->Enable(menuRenderMode->FindItem(wxT("&Sequence")), TRUE);
+   menuRenderMode->Enable(menuRenderMode->FindItem(wxT("&Sequence v2")), TRUE);
 
    wxMenu* menuDivision = GetMenuBar()->GetMenu(4);
-   menuDivision->Enable(menuDivision->FindItem(wxT("&8x8 Grid" )), TRUE );
-   menuDivision->Enable(menuDivision->FindItem(wxT("&1x1 Grid" )), TRUE );
-   menuDivision->Enable(menuDivision->FindItem(wxT("&2x2 Grid")), TRUE );
-   menuDivision->Enable(menuDivision->FindItem(wxT("&4x4 Grid")), TRUE );
-   menuDivision->Enable(menuDivision->FindItem(wxT("&64x64 Grid")), TRUE );
+  menuDivision->Enable(menuDivision->FindItem(wxT("&64 Jobs (8 x 8)" )), TRUE );
+   menuDivision->Enable(menuDivision->FindItem(wxT("&1 Job (1 x 1)" )), TRUE);
+   menuDivision->Enable(menuDivision->FindItem(wxT("&4 Jobs (2 x 2)")), TRUE);
+   menuDivision->Enable(menuDivision->FindItem(wxT("&16 Jobs (4 x 4)")), TRUE);
+   menuDivision->Enable(menuDivision->FindItem(wxT("&256 Jobs (16 x 16)")), TRUE);
+   menuDivision->Enable(menuDivision->FindItem(wxT("&1024 Jobs (32 x 32)")), TRUE);
+   menuDivision->Enable(menuDivision->FindItem(wxT("&4096 Jobs (64 x 64)")), TRUE);
 
    wxMenu* menuRenderDisplay = GetMenuBar()->GetMenu(5);
    menuRenderDisplay->Enable(menuRenderDisplay->FindItem(wxT("&Every Pixel" )), TRUE );
@@ -785,7 +801,7 @@ void WorkerThread::OnJob()
 
 RenderCanvas::RenderCanvas(wxWindow *parent)
    : wxScrolledWindow(parent), theImage(NULL), w(NULL), timer(NULL), updateTimer(this, ID_RENDER_UPDATE), totalThreads(1),
-   threads(NULL), queue(NULL), threadNumber(0), divisions(0), divisionsNumber(0), manager(NULL), theThreads(NULL), renderMode(SPIRAL_IN_AND_OUT2), renderDisplay(EVERY_PIXEL), samples(0)
+   threads(NULL), queue(NULL), threadNumber(0), divisions(0), divisionsNumber(0), manager(NULL), theThreads(NULL), renderMode(SEQUENCE2), renderDisplay(EVERY_PIXEL), samples(0)
 {
    SetOwnBackgroundColour(wxColour(143,144,150));
    queue=new Queue(this);
@@ -1093,7 +1109,7 @@ void RenderCanvas::renderStart(void)
     manager = new RenderThread(this);	// RenderThread communicates with the canvas rendered pixels
 	manager->Create();
 	manager->Run();
-	manager->SetPriority(40);
+	manager->SetPriority(50);
 	manager->SetRenderDisplay(this->renderDisplay);
 	w->paintArea = manager;				// Threads communicate with the manager via the World
 
@@ -1129,13 +1145,15 @@ void RenderCanvas::renderStart(void)
 	
 	if(renderMode == this->GRID ||
 	   renderMode == this->RANDOM ||
-	   renderMode == this->SEQUENCE ||
+	   renderMode == this->SEQUENCE || renderMode == this->SEQUENCE2 ||
 	   renderMode == this->SPIRAL_IN || 
 	   renderMode == this->SPIRAL_OUT || 
 	   renderMode == this->SPIRAL_IN_AND_OUT ||
 	   renderMode == this->SPIRAL_IN_AND_OUT2 )
 	{
 		vector<Pixel> toRender;
+//		int max = toRender.max_size();
+//		int dif = max - pixelsToRender;
 		toRender.reserve(pixelsToRender);			
 
 		// Generate Points for Spiral
@@ -1276,6 +1294,37 @@ void RenderCanvas::renderStart(void)
 		{	
 			std::random_shuffle(toRender.begin(), toRender.end());		
 		}
+
+		if(renderMode == this->SEQUENCE2)
+		{
+			std::vector<Pixel> center;
+				std::vector<Pixel> bounds;
+				center.reserve(toRender.size()/2);
+				bounds.reserve(toRender.size()/2);
+				int toSize = toRender.size();
+				int counter = 0;
+				while (counter<toSize)
+				{	
+					center.push_back(toRender[counter++]);
+					if(counter<toSize)
+						bounds.push_back(toRender[counter++]);
+				}				
+				toRender.clear();
+				int centerSize = center.size()-1;
+				int boundsSize = bounds.size()-1;
+				int boundsCounter = 0;
+				int toSizeD2 = toSize/2;
+				for(counter = 0; counter<toSizeD2; counter++)
+				{	if(centerSize >= 0)
+						toRender.push_back(center[centerSize--]);
+					else
+						int kkkk = 0;
+					if(boundsCounter <= boundsSize )
+						toRender.push_back(bounds[boundsCounter++]);				
+					else
+						int kkkk = 0;
+				}
+		}
 		
 		int totalQ = jobWidth * jobHeight;
 
@@ -1347,6 +1396,8 @@ void RenderCanvas::renderStart(void)
 		OnStart();		
 	}
 	wxGetApp().SetStatusText( wxT( "Rendering..." ) );
+
+
 
 }
 

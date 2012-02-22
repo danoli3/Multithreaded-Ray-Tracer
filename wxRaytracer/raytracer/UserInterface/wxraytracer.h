@@ -158,6 +158,7 @@ public:
    void OnRenderModeSpiralInAndOut ( wxCommandEvent& event );
    void OnRenderModeSpiralInAndOut2 ( wxCommandEvent& event );
    void OnRenderModeSequence ( wxCommandEvent& event );
+   void OnRenderModeSequence2 ( wxCommandEvent& event );
    void OnRenderDisplayPixel ( wxCommandEvent& event );
    void OnRenderDisplayRow ( wxCommandEvent& event );
    void OnRenderDisplayJob ( wxCommandEvent& event );
@@ -207,6 +208,7 @@ enum
    Menu_Render_Mode_Spiral_In_And_Out,
    Menu_Render_Mode_Spiral_In_And_Out2,
    Menu_Render_Mode_Sequence,
+   Menu_Render_Mode_Sequence2,
    Menu_Render_Display_Pixel,
    Menu_Render_Display_Row,
    Menu_Render_Display_Job,     
@@ -239,7 +241,7 @@ class RenderCanvas: public wxScrolledWindow
 
 public:
 
-   enum RenderMode { GRID, RANDOM, SPIRAL_IN, SPIRAL_OUT, SPIRAL_IN_AND_OUT, SPIRAL_IN_AND_OUT2, SEQUENCE };
+   enum RenderMode { GRID, RANDOM, SPIRAL_IN, SPIRAL_OUT, SPIRAL_IN_AND_OUT, SPIRAL_IN_AND_OUT2, SEQUENCE, SEQUENCE2 };
    enum Direction { UP, DOWN, LEFT, RIGHT };
 
    RenderCanvas(wxWindow *parent);
