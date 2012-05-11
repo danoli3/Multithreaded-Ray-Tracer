@@ -20,7 +20,7 @@
 #include <vector>
 #include "MultiThread.h"
 
-//#if DEBUG
+//#ifdef _DEBUG
 //#include "vld.h"
 //#endif
 
@@ -242,7 +242,7 @@ class RenderCanvas: public wxScrolledWindow
 public:
 
    enum RenderMode { GRID, RANDOM, SPIRAL_IN, SPIRAL_OUT, SPIRAL_IN_AND_OUT, SPIRAL_IN_AND_OUT2, SEQUENCE, SEQUENCE2 };
-   enum Direction { UP, DOWN, LEFT, RIGHT };
+   enum Direction { UP, DOWN, LEFT, RIGHT, END };
 
    RenderCanvas(wxWindow *parent);
    virtual ~RenderCanvas(void);
@@ -267,7 +267,10 @@ public:
    void OnQuit();
    void OnStart();
 
-   std::vector<Pixel> spiral(int &x, int &y, int &width, int &height, Direction direction);
+   // recursive function to calculate spiral
+   void spiral(int &x, int &y, int &width, int &height, Direction direction, std::vector<Pixel> &pixels);
+   // changed spiral function to be loop based
+   void spiral(std::vector<Pixel> &pixels);
 
    int totalThreads; 
    int threadNumber;
@@ -332,13 +335,14 @@ public:
 private:
    void NotifyCanvas();
    RenderCanvas* canvas;   
-   vector<RenderPixel*> pixels;
+   vector<RenderPixel*>* pixels;
    long lastUpdateTime; 
    wxStopWatch* timer;
    bool stop;
    RenderDisplay renderDisplay;
 
-   wxMutex mutex;
+  // wxMutex mutex;
+   wxCriticalSection critical;
 };
 
 

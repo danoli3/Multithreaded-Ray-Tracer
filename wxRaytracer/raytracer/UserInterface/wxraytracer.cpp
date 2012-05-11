@@ -131,8 +131,8 @@ wxraytracerFrame::wxraytracerFrame(const wxPoint& pos, const wxSize& size)
    //---------------------------------------- RenderMode Menu
 
    wxMenu *menuRenderMode = new wxMenu;
-   menuRenderMode->AppendRadioItem(Menu_Render_Mode_Sequence2, wxT("&Sequence v2")); 
    menuRenderMode->AppendRadioItem(Menu_Render_Mode_Spiral_In_And_Out2, wxT("&Spiral In and Out v2"));
+   menuRenderMode->AppendRadioItem(Menu_Render_Mode_Sequence2, wxT("&Sequence v2"));    
    menuRenderMode->AppendRadioItem(Menu_Render_Mode_Spiral_In_And_Out, wxT("&Spiral In and Out"));
    menuRenderMode->AppendRadioItem(Menu_Render_Mode_Spiral_Out, wxT("&Spiral Out"));  
    menuRenderMode->AppendRadioItem(Menu_Render_Mode_Spiral_In, wxT("&Spiral In"));
@@ -140,7 +140,7 @@ wxraytracerFrame::wxraytracerFrame(const wxPoint& pos, const wxSize& size)
    menuRenderMode->AppendRadioItem(Menu_Render_Mode_Random, wxT("&Random"));  
    menuRenderMode->AppendRadioItem(Menu_Render_Mode_Grid , wxT("&Grid" ));
   
-   menuRenderMode->Check(menuRenderMode->FindItem(wxT("&Sequence v2" )), TRUE );
+   menuRenderMode->Check(menuRenderMode->FindItem(wxT("&Spiral In and Out v2" )), TRUE );
 
    //---------------------------------------- Divisions Menu
 
@@ -452,7 +452,7 @@ void wxraytracerFrame::OnDivision32( wxCommandEvent& WXUNUSED( event ) )
 void wxraytracerFrame::OnDivision64( wxCommandEvent& WXUNUSED( event ) )
 {
    wxMenu* menu = GetMenuBar()->GetMenu(4);
-   menu->Check(menu->FindItem(wxT("&64 Jobs (8 x 8)")), TRUE);
+   menu->Check(menu->FindItem(wxT("&4096 Jobs (64 x 64)")), TRUE);
    
    canvas->divisionsNumber = 64;
 }
@@ -801,7 +801,7 @@ void WorkerThread::OnJob()
 
 RenderCanvas::RenderCanvas(wxWindow *parent)
    : wxScrolledWindow(parent), theImage(NULL), w(NULL), timer(NULL), updateTimer(this, ID_RENDER_UPDATE), totalThreads(1),
-   threads(NULL), queue(NULL), threadNumber(0), divisions(0), divisionsNumber(0), manager(NULL), theThreads(NULL), renderMode(SEQUENCE2), renderDisplay(EVERY_PIXEL), samples(0)
+   threads(NULL), queue(NULL), threadNumber(0), divisions(0), divisionsNumber(0), manager(NULL), theThreads(NULL), renderMode(SPIRAL_IN_AND_OUT2), renderDisplay(EVERY_PIXEL), samples(0)
 {
    SetOwnBackgroundColour(wxColour(143,144,150));
    queue=new Queue(this);
@@ -1152,8 +1152,6 @@ void RenderCanvas::renderStart(void)
 	   renderMode == this->SPIRAL_IN_AND_OUT2 )
 	{
 		vector<Pixel> toRender;
-//		int max = toRender.max_size();
-//		int dif = max - pixelsToRender;
 		toRender.reserve(pixelsToRender);			
 
 		// Generate Points for Spiral
@@ -1162,7 +1160,26 @@ void RenderCanvas::renderStart(void)
 			int y = 0;
 			int hres = w->vp.hres-1;
 			int vres = w->vp.vres-1;
-			toRender = spiral(x, y, hres, vres, RIGHT);
+			//if(w->vp.vres >= 2048 || w->vp.hres >= 2048)
+				spiral(toRender);
+			//else
+				//spiral(x, y, hres, vres, RIGHT,toRender);	
+
+			/*
+			// test to find duplicate pixels
+			std::vector<Pixel> element(toRender.size());
+			std::vector<int> elementAmount(toRender.size());
+			std::vector<Pixel>::iterator it;
+			int i = 0, mycount = 0;
+
+			for(std::vector<Pixel>::iterator onceCycle=toRender.begin(); onceCycle<toRender.end(); onceCycle++) {
+				it = find(element.begin(), element.end(), *onceCycle);
+				if(it==element.end()) {
+					element[i] = *onceCycle; 
+					elementAmount[i++] = (int)count(toRender.begin(), toRender.end(), *onceCycle);
+				}
+			}*/
+
 			if(renderMode == SPIRAL_OUT)
 			{	
 				std::reverse(toRender.begin(), toRender.end()); // Reverse if spiral going out from center			
@@ -1401,92 +1418,118 @@ void RenderCanvas::renderStart(void)
 
 }
 
-std::vector<Pixel> RenderCanvas::spiral(int &x, int &y, int &width, int &height, Direction direction)
+void RenderCanvas::spiral(int &x, int &y, int &width, int &height, Direction direction, std::vector<Pixel> &pixels)
 {
-	vector<Pixel> current;
 	Direction newDirection = RIGHT;
-	int value = 0;
-	/*bool end = false;
-	if(height != width)
-	{
-		if(height <= 1 || width <= 1)
-		{
-			if(height > width)
-			{
-				width = 0;
-				height = 0;
-				return current;
-			}
-			else if(width > height)
-			{
-				width = 0;
-				height = 0;
-				return current;
-			}
-		}
-	}*/
-
+	int value = 0;	
 	switch(direction)
 	{
-		case RIGHT:
-			
+		case RIGHT:			
 			value = width;
-			for(; x<=value; x++)
-			{
-				current.push_back(Pixel(x,y));
-			}			
+			for(; x<=value; x++)			
+				pixels.push_back(Pixel(x,y));					
 			x -= 1;
 			y += 1;
 			newDirection = UP;
 			break;
 		case UP:			
 			value = height;
-			for(; y<=value; y++)
-			{
-				current.push_back(Pixel(x,y));
-			}			
+			for(; y<=value; y++)			
+				pixels.push_back(Pixel(x,y));					
 			y -= 1;
 			newDirection = LEFT;
 			break;
 		case LEFT:
-			value = w->vp.hres - (width + 1);
-			while(x>value)
-			{	--x;
-				current.push_back(Pixel(x,y));				
-			}
 			if(width >= 1)
+			{	value = w->vp.hres - (width + 1);
+				while(x>value)
+				{	--x;
+					pixels.push_back(Pixel(x,y));				
+				}			
+				newDirection = DOWN;
 				width -= 1;
+			}
 			else
-				int i = 0;
-			newDirection = DOWN;
+				height = 0;		
 			break;
 		case DOWN:
 			if(height >= 1)
 			{	
 				height -= 1;
+				value = w->vp.vres - (height + 1);
+				while(y>value)
+				{	--y;
+					pixels.push_back(Pixel(x,y));
+				}			
+				newDirection = RIGHT;
+				x += 1;
 			}
 			else
-				int i = 0;
-			value = w->vp.vres - (height + 1);
-			while(y>value)
-			{	--y;
-				current.push_back(Pixel(x,y));
-			}			
-			newDirection = RIGHT;
-			x += 1;
+				width = 0;			
 			break;
 	}	
-	if(!(width <= 0 && height <= 0) && current.size() != 0)
+	if(pixels.size() < pixelsToRender) // || !(width <= 0 && height <= 0) || newDirection != END )
+		spiral(x,y, width, height, newDirection, pixels);	
+}
+
+void RenderCanvas::spiral(std::vector<Pixel> &pixels)
+{
+	int x = 0;
+	int y = 0;
+	int width = w->vp.hres-1;
+	int height = w->vp.vres-1;
+	Direction direction = RIGHT;
+	int value = 0;
+	while(pixels.size() < pixelsToRender)
 	{
-		vector<Pixel> addVector;
-		addVector = spiral(x,y, width, height, newDirection);
-		current.insert(current.end(), addVector.begin(), addVector.end());
+		value = 0;
+		switch(direction)
+		{
+			case RIGHT:			
+				value = width;
+				for(; x<=value; x++)			
+					pixels.push_back(Pixel(x,y));					
+				x -= 1;
+				y += 1;
+				direction = UP;
+				break;
+			case UP:			
+				value = height;
+				for(; y<=value; y++)			
+					pixels.push_back(Pixel(x,y));					
+				y -= 1;
+				direction = LEFT;
+				break;
+			case LEFT:
+				if(width >= 1)
+				{	value = w->vp.hres - (width + 1);
+					while(x>value)
+					{	--x;
+						pixels.push_back(Pixel(x,y));				
+					}			
+					direction = DOWN;
+					width -= 1;
+				}
+				else
+					height = 0;		
+				break;
+			case DOWN:
+				if(height >= 1)
+				{	
+					height -= 1;
+					value = w->vp.vres - (height + 1);
+					while(y>value)
+					{	--y;
+						pixels.push_back(Pixel(x,y));
+					}			
+					direction = RIGHT;
+					x += 1;
+				}
+				else
+					width = 0;			
+				break;
+		}	
 	}
-	else
-	{
-     int temp = 0;
-	}
-	return current;
 }
 
 void RenderCanvas::OnStart(wxCommandEvent& WXUNUSED(event)) // start one worker thread
@@ -1613,40 +1656,42 @@ BEGIN_EVENT_TABLE( RenderCanvas, wxScrolledWindow )
 END_EVENT_TABLE()
 
 void RenderThread::setPixel(int x, int y, int red, int green, int blue)
-{  mutex.Lock();
-   pixels.push_back(new RenderPixel(x, y, red, green, blue));
-   mutex.Unlock();   
+{  wxCriticalSectionLocker locker(critical);
+   pixels->push_back(new RenderPixel(x, y, red, green, blue));
+   return;
 }
 
 void RenderThread::setPixel(const list<RenderedInt>& re)
-{  
-   mutex.Lock();
+{
+   wxCriticalSectionLocker locker(critical);
    list<RenderedInt>::const_iterator it;
    for(it=re.begin(); it != re.end(); it++)
-   {   pixels.push_back(new RenderPixel(it->x, it->y, it->r, it->g, it->b));
+   {   pixels->push_back(new RenderPixel(it->x, it->y, it->r, it->g, it->b));
    }
-   mutex.Unlock();   
+   return;
 }
 
 void RenderThread::NotifyCanvas()
 {
-   mutex.Lock();
+   wxCriticalSectionLocker locker(critical);
    lastUpdateTime = timer->Time();
    
    //copy rendered pixels into a new vector and reset
-   vector<RenderPixel*> *pixelsUpdate = new vector<RenderPixel*>(pixels);
-   pixels.clear();
+   //vector<RenderPixel*> *pixelsUpdate = new vector<RenderPixel*>(pixels);
+   //pixels.clear();
    
    wxCommandEvent event(wxEVT_RENDER, ID_RENDER_NEWPIXEL);
-   event.SetClientData(pixelsUpdate);
+   event.SetClientData(pixels);
    canvas->GetEventHandler()->AddPendingEvent(event);
 
-   mutex.Unlock();
+   pixels = new vector<RenderPixel*>();
+   return;
 }
 
 void RenderThread::OnExit()
 {        
-   pixels.clear();   
+   pixels->clear();   
+   delete pixels;
 
    if(timer != NULL)
    {   delete timer;
@@ -1678,6 +1723,7 @@ void *RenderThread::Entry()
 {
 	lastUpdateTime = 0;
 	timer = new wxStopWatch();
+	pixels = new vector<RenderPixel*>();
 
 	while(!TestDestroy())
 	{   NotifyCanvas();	     // Send pixels to canvas
