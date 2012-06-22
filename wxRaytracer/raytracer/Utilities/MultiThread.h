@@ -30,13 +30,13 @@ struct RenderedInt {
   int x, y, r, g, b;
 } ;
 
-class Pixel
+struct Pixel
 {
 public:
-   Pixel(int xi, int yi) : x(xi), y(yi)
+   Pixel(unsigned short xi, unsigned short yi) : x(xi), y(yi)
    { }
 
-   int x, y;
+   unsigned short x, y;
 };
 
 

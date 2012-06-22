@@ -1195,7 +1195,20 @@ void RenderCanvas::renderStart(void)
 	   renderMode == this->SPIRAL_IN_AND_OUT2 )
 	{
 		vector<Pixel> toRender;
-		toRender.reserve(pixelsToRender);			
+		try 
+		{
+			toRender.reserve(pixelsToRender);		
+		}
+		catch(...)
+		{
+			 unsigned int size = sizeof(Pixel((unsigned) w->vp.hres/2,(unsigned) w->vp.vres/2));
+			 unsigned long memory = ((pixelsToRender * size) * 0.0009765625); // KB
+			 memory = memory * 0.0009765625; // MB
+			 
+			 wxMessageBox(wxT(wxString::Format(wxT("Error: Not enough memory space! Need: %ld MB free RAM"), memory)) );
+			 wxMessageBox(wxT("Resolution may be too great"));
+			 throw 1;
+		}
 
 		// Generate Points for Spiral
 		if(renderMode == this->SPIRAL_IN || renderMode == this->SPIRAL_OUT || renderMode == SPIRAL_IN_AND_OUT || renderMode == SPIRAL_IN_AND_OUT2)
@@ -1676,7 +1689,7 @@ void RenderCanvas::OnQuit()
 				{   wxCriticalSectionLocker enter(*threadsCS[id]);
 					if((*iter) != NULL)
 					{	if ((*iter)->Delete() != wxTHREAD_NO_ERROR )
-							wxLogError("Can't delete the thread!");					
+							wxLogError((wxChar*)"Can't delete the thread!");					
 					}
 				}
 			}

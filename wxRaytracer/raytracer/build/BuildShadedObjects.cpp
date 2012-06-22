@@ -12,9 +12,9 @@ World::build(void) {
 	int num_samples = 1; 
 	
 	// view plane  
-	  
-	vp.set_hres(400);
-	vp.set_vres(400);
+	int size = 1;
+	vp.set_hres(400 * size);
+	vp.set_vres(400 * size);
 	vp.set_pixel_size(0.5);
 	vp.set_samples(num_samples);
 	
@@ -36,7 +36,7 @@ World::build(void) {
 	pinhole_ptr->set_eye(0, 0, 500); 
 	pinhole_ptr->set_lookat(0.0);
 	pinhole_ptr->set_view_distance(600.0);
-//	pinhole_ptr->set_zoom(1.0f);
+	pinhole_ptr->set_zoom(1.0f * size);
 	pinhole_ptr->compute_uvw();     
 	set_camera(pinhole_ptr);
 
