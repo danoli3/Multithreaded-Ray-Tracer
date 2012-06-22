@@ -6,7 +6,7 @@
 
 #include "Point3D.h"
 #include "Vector3D.h"
-#include "Multithread.h"
+#include "MultiThread.h"
 #include <vector>
 
 

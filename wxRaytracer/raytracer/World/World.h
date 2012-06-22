@@ -43,8 +43,8 @@ class World {
 		Light*   					ambient_ptr;
 		Camera*						camera_ptr;		
 		Sphere 						sphere;		// for Chapter 3 only
-		vector<SmartPointer<GeometricObject>> objects;		
-		vector<SmartPointer<Light>> 				lights;
+		vector<SmartPointer<GeometricObject> > objects;
+		vector<SmartPointer<Light> > 				lights;
 		
 		RenderThread* 				paintArea; 	//connection to skeleton - wxRaytracer.h	
 		RandomNumber*               random;
@@ -94,7 +94,7 @@ class World {
 
 		bool stop_rendering() const;
 
-		RenderDisplay World::render_display() const;
+		RenderDisplay render_display() const;
 
 		float 
 		rand_float();

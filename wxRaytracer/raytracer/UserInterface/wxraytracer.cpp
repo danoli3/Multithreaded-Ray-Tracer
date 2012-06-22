@@ -1,5 +1,3 @@
-
-
 #include <wx/wx.h>
 #include <wx/dcbuffer.h>
 #include "wxraytracer.h"
@@ -8,7 +6,7 @@
 #include "black.xpm"
 
 #if WXWIDGETS292>0
-	wxDEFINE_EVENT(THE_THREADS, wxThreadEvent);
+	wxDEFINE_EVENT(wxEVT_THREAD, wxThreadEvent);
 #else
 	DEFINE_EVENT_TYPE(wxEVT_THREAD);
 #endif
@@ -132,12 +130,12 @@ wxraytracerFrame::wxraytracerFrame(const wxPoint& pos, const wxSize& size)
 
    wxMenu *menuRenderMode = new wxMenu;
    menuRenderMode->AppendRadioItem(Menu_Render_Mode_Spiral_In_And_Out2, wxT("&Spiral In and Out v2"));
-   menuRenderMode->AppendRadioItem(Menu_Render_Mode_Sequence2, wxT("&Sequence v2"));    
+   menuRenderMode->AppendRadioItem(Menu_Render_Mode_Sequence2, wxT("&Sequence v2"));
    menuRenderMode->AppendRadioItem(Menu_Render_Mode_Spiral_In_And_Out, wxT("&Spiral In and Out"));
-   menuRenderMode->AppendRadioItem(Menu_Render_Mode_Spiral_Out, wxT("&Spiral Out"));  
+   menuRenderMode->AppendRadioItem(Menu_Render_Mode_Spiral_Out, wxT("&Spiral Out"));
    menuRenderMode->AppendRadioItem(Menu_Render_Mode_Spiral_In, wxT("&Spiral In"));
-   menuRenderMode->AppendRadioItem(Menu_Render_Mode_Sequence, wxT("&Sequence"));   
-   menuRenderMode->AppendRadioItem(Menu_Render_Mode_Random, wxT("&Random"));  
+   menuRenderMode->AppendRadioItem(Menu_Render_Mode_Sequence, wxT("&Sequence"));
+   menuRenderMode->AppendRadioItem(Menu_Render_Mode_Random, wxT("&Random"));
    menuRenderMode->AppendRadioItem(Menu_Render_Mode_Grid , wxT("&Grid" ));
   
    menuRenderMode->Check(menuRenderMode->FindItem(wxT("&Spiral In and Out v2" )), TRUE );
@@ -552,7 +550,15 @@ void wxraytracerFrame::OnRenderStart( wxCommandEvent& WXUNUSED( event ) )
    menu->Enable(menu->FindItem(wxT("&Pause" )), TRUE );
    menu->Enable(menu->FindItem(wxT("&Resume")), FALSE);   
    
-   canvas->renderStart();
+   try 
+   {
+		canvas->renderStart();
+   }
+   catch(...)
+   {
+	   wxMessageBox(wxT("RenderStart() could not be completed"));
+	   return;
+   }
    
    wxMenu* menuFile = GetMenuBar()->GetMenu(0);
    menuFile->Enable(menuFile->FindItem(wxT( "&Open..."   )), FALSE);
@@ -657,7 +663,7 @@ void wxraytracerFrame::OnRenderCompleted( wxCommandEvent& event )
    menuRenderMode->Enable(menuRenderMode->FindItem(wxT("&Sequence v2")), TRUE);
 
    wxMenu* menuDivision = GetMenuBar()->GetMenu(4);
-  menuDivision->Enable(menuDivision->FindItem(wxT("&64 Jobs (8 x 8)" )), TRUE );
+   menuDivision->Enable(menuDivision->FindItem(wxT("&64 Jobs (8 x 8)" )), TRUE );
    menuDivision->Enable(menuDivision->FindItem(wxT("&1 Job (1 x 1)" )), TRUE);
    menuDivision->Enable(menuDivision->FindItem(wxT("&4 Jobs (2 x 2)")), TRUE);
    menuDivision->Enable(menuDivision->FindItem(wxT("&16 Jobs (4 x 4)")), TRUE);
@@ -740,7 +746,7 @@ tJOB Queue::Pop()
 
 void Queue::Report(const tJOB::tCOMMANDS& cmd, const wxString& sArg, int iArg) // report back to parent
     {
-      wxCommandEvent evt(wxEVT_THREAD, cmd); // create command event object
+	  wxCommandEvent evt(wxEVT_THREAD, cmd); // create command event object
       evt.SetString(sArg); // associate string with it
       evt.SetInt(iArg);
       parent->AddPendingEvent(evt); // and add it to parent's event queue
@@ -755,18 +761,32 @@ size_t Queue::Stacksize() // helper function to return no of pending jobs
 /******************************************************************************/
 /********************* WorkerThread *******************************************/
 /******************************************************************************/
+WorkerThread::~WorkerThread()
+{
+	wxCriticalSectionLocker enter(*canvas->threadsCS[id-1]);
+	// the thread is being destroyed; make sure not to leave dangling pointers around
+	canvas->theThreads[id-1] = NULL;
+}
+
+unsigned int WorkerThread::getID() const
+{
+	return id;
+}
 
 wxThread::ExitCode WorkerThread::Entry()
     {
       tJOB::tCOMMANDS iErr;	  		
       queue->Report(tJOB::eID_THREAD_STARTED, wxEmptyString, id); // tell main thread that worker thread has successfully started
-      try { while(true) OnJob(); } // this is the main loop: process jobs until a job handler throws
-      catch(tJOB::tCOMMANDS& i) 
-	  { queue->Report(iErr=i, wxEmptyString, id); } // catch return value from error condition
+      iErr = OnJob();  // this is the main loop: process jobs until a job handler throws
+      //catch(tJOB::tCOMMANDS& i) 
+	 // { 
+	  queue->Report(iErr, wxEmptyString, id); // report from error condition
+	  if(iErr == tJOB::eID_THREAD_EXIT)
+		  iErr = tJOB::eID_THREAD_EXIT_SUCESS;
       return (wxThread::ExitCode)iErr; // and return exit code
     } // virtual wxThread::ExitCode Entry()
 
-void WorkerThread::OnJob()
+tJOB::tCOMMANDS WorkerThread::OnJob()
     { 
 	  while(!TestDestroy()) //while this thread is not asked to be destroyed
 	  {
@@ -776,7 +796,7 @@ void WorkerThread::OnJob()
 		  case tJOB::eID_THREAD_EXIT: // thread should exit	
 			queue->Report(tJOB::eID_THREAD_JOB, wxString::Format(wxT("Ending #%s Thread."), job.arg.c_str()), id);
 			//Sleep(1000); // wait a while
-			throw tJOB::eID_THREAD_EXIT; // confirm exit command
+			return tJOB::eID_THREAD_EXIT; // confirm exit command
 		  case tJOB::eID_THREAD_JOB: // process a standard job	
 			if(world->camera_ptr != NULL)			
 				world->camera_ptr->render_scene(*world, job.theJobs);
@@ -787,12 +807,13 @@ void WorkerThread::OnJob()
 		  case tJOB::eID_THREAD_JOBERR: // process a job that terminates with an error
 			queue->Report(tJOB::eID_THREAD_JOB, wxString::Format(wxT("Job #%s errorneous."), job.arg.c_str()), id);
 			//Sleep(1000);
-			throw tJOB::eID_THREAD_EXIT; // report exit of worker thread
+			return tJOB::eID_THREAD_JOBERR; // report exit of worker thread
 			break;
 		  case tJOB::eID_THREAD_NULL: // dummy command
 		  default: break; // default
 		  } // switch(job.cmd)
 	  }
+	  return tJOB::eID_THREAD_EXIT;
     } // virtual void OnJob()
 
 /******************************************************************************/
@@ -821,15 +842,31 @@ RenderCanvas::~RenderCanvas(void)
 	if(queue != NULL)
 	{   if(threads.size() != 0)
 			OnQuit();
-		wxThread::Sleep(500);
+		wxThread::Sleep(50);
 		delete queue;
 		queue = NULL; }	
 		
-	if(manager != NULL)
-    {	manager->Delete();
-		delete manager;
-		manager = NULL; 
+	{  // scope for CS locker
+		wxCriticalSectionLocker enter(managerCS);
+		if(manager != NULL)
+		{	if (manager->Delete() != wxTHREAD_NO_ERROR )
+               wxLogError("Can't delete the manager thread!");
+		}
+		// exit from the critical section to give the thread
+        // the possibility to enter its destructor
+        // (which is guarded with managerCS critical section!)
 	}
+
+    while (1)
+    {
+            { // was the ~RenderManager() dtor executed?
+                wxCriticalSectionLocker enter(managerCS);
+                if (manager == NULL) break;  // if it has been cleaned up
+            }
+
+            // wait for thread completion
+            wxThread::This()->Sleep(1);
+    }
 
 	if(theImage != NULL)
     {   delete theImage; 
@@ -953,17 +990,21 @@ void RenderCanvas::OnNewPixel( wxCommandEvent& event )
 void RenderCanvas::renderPause(void)
 {
 	if(!theThreads.empty())
-	{	for (iter = theThreads.begin(); iter < theThreads.end(); ++iter)
-		if((*iter) != NULL)
-		{	if ((*iter)->Pause() != wxTHREAD_NO_ERROR )
-                wxLogError("Can't pause the worker thread!");
+	{	int id = 0;
+		for (iter = theThreads.begin(); iter < theThreads.end(); ++iter, id++)
+		{	wxCriticalSectionLocker enter(*threadsCS[id]);
+			if((*iter) != NULL)
+			{	//wxCriticalSectionLocker enter(*threadsCS[(*iter)->getID()]);
+				if ((*iter)->Pause() != wxTHREAD_NO_ERROR )
+					wxLogError((wxChar*)"Can't pause the worker thread!");
+			}
 		}
     
 	}
 
 	if(manager != NULL)
 	{	if (manager->Pause() != wxTHREAD_NO_ERROR )
-                wxLogError("Can't pause the manager thread!");
+                wxLogError((wxChar*)"Can't pause the manager thread!");
 	}
 
     updateTimer.Stop();
@@ -975,17 +1016,19 @@ void RenderCanvas::renderPause(void)
 void RenderCanvas::renderResume(void)
 {     
 	if(!theThreads.empty())
-	{	for (iter = theThreads.begin(); iter < theThreads.end(); ++iter)
-		if((*iter) != NULL)
-		{	if ((*iter)->Resume() != wxTHREAD_NO_ERROR )
-                wxLogError("Can't resume the worker thread!");
+	{	int id = 0;
+		for (iter = theThreads.begin(); iter < theThreads.end(); ++iter, id++)
+		{	wxCriticalSectionLocker enter(*threadsCS[id]);
+			if((*iter) != NULL)
+			{	if ((*iter)->Resume() != wxTHREAD_NO_ERROR )
+					wxLogError((wxChar*)"Can't resume the worker thread!");
+			}
 		}
-    
 	}
 
 	if(manager != NULL)
 	{	if (manager->Resume() != wxTHREAD_NO_ERROR )
-                wxLogError("Can't resume the manager thread!");
+                wxLogError((wxChar*)"Can't resume the manager thread!");
 	}
 
     updateTimer.Start();
@@ -1108,8 +1151,8 @@ void RenderCanvas::renderStart(void)
 
     manager = new RenderThread(this);	// RenderThread communicates with the canvas rendered pixels
 	manager->Create();
+	manager->SetPriority(100);  // must set priority before run
 	manager->Run();
-	manager->SetPriority(50);
 	manager->SetRenderDisplay(this->renderDisplay);
 	w->paintArea = manager;				// Threads communicate with the manager via the World
 
@@ -1128,20 +1171,20 @@ void RenderCanvas::renderStart(void)
 	
 	wxGetApp().SetStatusText( wxT( "Setting up Rendering Queue..." ) );
 	// Assign job division sizes
-	int jobWidth = 0;
-	int jobHeight = 0;
+	unsigned int jobWidth = 0;
+	unsigned int jobHeight = 0;
 
-	if(w->vp.hres < divisions)	
-		jobWidth = w->vp.hres;
+	if((unsigned)w->vp.hres < divisions)	
+		jobWidth = (unsigned)w->vp.hres;
 	else
-		jobWidth = w->vp.hres / divisions;
-	if(w->vp.vres < divisions)	
-		jobHeight = w->vp.vres;
+		jobWidth = (unsigned) w->vp.hres / divisions;
+	if((unsigned)w->vp.vres < divisions)	
+		jobHeight = (unsigned)w->vp.vres;
 	else 
-		jobHeight = w->vp.vres / divisions;
+		jobHeight = (unsigned)w->vp.vres / divisions;
 
-	float xRemainder = w->vp.hres % divisions;
-	float yRemainder = w->vp.vres % divisions;	
+	float xRemainder = (unsigned)w->vp.hres % divisions;
+	float yRemainder = (unsigned)w->vp.vres % divisions;	
 	
 	if(renderMode == this->GRID ||
 	   renderMode == this->RANDOM ||
@@ -1156,29 +1199,29 @@ void RenderCanvas::renderStart(void)
 
 		// Generate Points for Spiral
 		if(renderMode == this->SPIRAL_IN || renderMode == this->SPIRAL_OUT || renderMode == SPIRAL_IN_AND_OUT || renderMode == SPIRAL_IN_AND_OUT2)
-		{	int x = 0;
-			int y = 0;
-			int hres = w->vp.hres-1;
-			int vres = w->vp.vres-1;
-			//if(w->vp.vres >= 2048 || w->vp.hres >= 2048)
-				spiral(toRender);
-			//else
-				//spiral(x, y, hres, vres, RIGHT,toRender);	
+		{	unsigned int x = 0;
+			unsigned int y = 0;
+			unsigned int hres = (unsigned)w->vp.hres-1;
+			unsigned int vres = (unsigned)w->vp.vres-1;		
+			
+			// calculate spiral
+			spiral(toRender);
 
-			/*
-			// test to find duplicate pixels
-			std::vector<Pixel> element(toRender.size());
-			std::vector<int> elementAmount(toRender.size());
-			std::vector<Pixel>::iterator it;
-			int i = 0, mycount = 0;
+			/**
+				// test to find duplicate pixels - Debugging of Spiral Code
+				std::vector<Pixel> element(toRender.size());
+				std::vector<int> elementAmount(toRender.size());
+				std::vector<Pixel>::iterator it;
+				int i = 0, mycount = 0;
 
-			for(std::vector<Pixel>::iterator onceCycle=toRender.begin(); onceCycle<toRender.end(); onceCycle++) {
-				it = find(element.begin(), element.end(), *onceCycle);
-				if(it==element.end()) {
-					element[i] = *onceCycle; 
-					elementAmount[i++] = (int)count(toRender.begin(), toRender.end(), *onceCycle);
-				}
-			}*/
+				for(std::vector<Pixel>::iterator onceCycle=toRender.begin(); onceCycle<toRender.end(); onceCycle++) {
+					it = find(element.begin(), element.end(), *onceCycle);
+					if(it==element.end()) {
+						element[i] = *onceCycle; 
+						elementAmount[i++] = (int)count(toRender.begin(), toRender.end(), *onceCycle);
+					}
+				} 
+			*/
 
 			if(renderMode == SPIRAL_OUT)
 			{	
@@ -1190,8 +1233,8 @@ void RenderCanvas::renderStart(void)
 				std::vector<Pixel> bounds;
 				center.reserve(toRender.size()/2);
 				bounds.reserve(toRender.size()/2);
-				int toSizeD2 = toRender.size()/2;
-				int counter = 0;
+				unsigned int toSizeD2 = toRender.size()/2;
+				unsigned int counter = 0;
 				while (counter<toSizeD2)
 				{
 					bounds.push_back(toRender[counter++]);			
@@ -1205,10 +1248,10 @@ void RenderCanvas::renderStart(void)
 				}		
 				
 				toRender.clear();
-				int centerSize = center.size()-1;
-				int boundsSize = bounds.size()-1;
-				int boundsCounter = 0;		
-				int centerCounter = 0;	
+				unsigned int centerSize = center.size()-1;
+				unsigned int boundsSize = bounds.size()-1;
+				unsigned int boundsCounter = 0;		
+				unsigned int centerCounter = 0;	
 				for(counter = 0; counter<toSizeD2; counter++)
 				{	if(centerCounter <= centerSize)
 						toRender.push_back(center[centerCounter++]);					
@@ -1223,8 +1266,8 @@ void RenderCanvas::renderStart(void)
 				std::vector<Pixel> bounds;
 				center.reserve(toRender.size()/2);
 				bounds.reserve(toRender.size()/2);
-				int toSize = toRender.size();
-				int counter = 0;
+				unsigned int toSize = toRender.size();
+				unsigned int counter = 0;
 				while (counter<toSize)
 				{	
 					center.push_back(toRender[counter++]);
@@ -1232,36 +1275,32 @@ void RenderCanvas::renderStart(void)
 						bounds.push_back(toRender[counter++]);
 				}				
 				toRender.clear();
-				int centerSize = center.size()-1;
-				int boundsSize = bounds.size()-1;
-				int boundsCounter = 0;
-				int toSizeD2 = toSize/2;
+				unsigned int centerSize = center.size()-1;
+				unsigned int boundsSize = bounds.size()-1;
+				unsigned int boundsCounter = 0;
+				unsigned int toSizeD2 = toSize/2;
 				for(counter = 0; counter<toSizeD2; counter++)
 				{	if(centerSize >= 0)
 						toRender.push_back(center[centerSize--]);
-					else
-						int kkkk = 0;
 					if(boundsCounter <= boundsSize )
-						toRender.push_back(bounds[boundsCounter++]);				
-					else
-						int kkkk = 0;
+						toRender.push_back(bounds[boundsCounter++]);
 				}
 			}
 		}
 		else if(renderMode == this->GRID)  //  Grid
 		{
-			int currentX = 0;
-			int currentY = 0;	
-			for(int y=0; y < divisions; y++)	
+			unsigned int currentX = 0;
+			unsigned int currentY = 0;	
+			for(unsigned int y=0; y < divisions; y++)	
 			{	currentY = y * jobHeight;
-				for(int x=0; x < divisions; x++)
+				for(unsigned int x=0; x < divisions; x++)
 				{	
 					currentX = x * jobWidth;				
-					int xEnd = currentX + jobWidth;
-					int yEnd = currentY + jobHeight;	
-					for(int iy = currentY; iy<yEnd; iy++)					
+					unsigned int xEnd = currentX + jobWidth;
+					unsigned int yEnd = currentY + jobHeight;	
+					for(unsigned int iy = currentY; iy<yEnd; iy++)					
 					{
-						for(int ix = currentX; ix<xEnd; ix++)
+						for(unsigned int ix = currentX; ix<xEnd; ix++)
 						{
 							toRender.push_back(Pixel(ix, iy));
 						}
@@ -1270,26 +1309,26 @@ void RenderCanvas::renderStart(void)
 
 			}
 			if(yRemainder != 0)
-			{		int yStart = w->vp.vres - yRemainder;
-					int xStart = 0;
-					int yEnd = w->vp.vres;
-					int xEnd = w->vp.hres;
-					for(int iY = yStart; iY < yEnd; iY++)
+			{		unsigned int yStart = w->vp.vres - yRemainder;
+					unsigned int xStart = 0;
+					unsigned int yEnd = w->vp.vres;
+					unsigned int xEnd = w->vp.hres;
+					for(unsigned int iY = yStart; iY < yEnd; iY++)
 					{
-						for(int iX = xStart; iX < xEnd; iX++)
+						for(unsigned int iX = xStart; iX < xEnd; iX++)
 						{
 							toRender.push_back(Pixel(iX, iY));
 						}
 					}					
 			}
 			if(xRemainder != 0)
-			{		int yStart = 0;
-					int xStart = w->vp.hres - xRemainder;
-					int yEnd = w->vp.vres;
-					int xEnd = w->vp.hres;
-					for(int iX = xStart; iX < xEnd; iX++)					
+			{		unsigned int yStart = 0;
+					unsigned int xStart = w->vp.hres - xRemainder;
+					unsigned int yEnd = w->vp.vres;
+					unsigned int xEnd = w->vp.hres;
+					for(unsigned int iX = xStart; iX < xEnd; iX++)					
 					{
-						for(int iY = yStart; iY < yEnd; iY++)
+						for(unsigned int iY = yStart; iY < yEnd; iY++)
 						{
 							toRender.push_back(Pixel(iX, iY));
 						}
@@ -1298,9 +1337,9 @@ void RenderCanvas::renderStart(void)
 		}
 		else // if not spiral (Random, Sequence)
 		{
-			for(int y=0; y < w->vp.vres; y++)	
+			for(unsigned int y=0; y < (unsigned)w->vp.vres; y++)	
 			{
-				for(int x=0; x < w->vp.hres; x++)
+				for(unsigned int x=0; x < (unsigned)w->vp.hres; x++)
 				{	
 					toRender.push_back(Pixel(x, y));
 				}
@@ -1318,8 +1357,8 @@ void RenderCanvas::renderStart(void)
 				std::vector<Pixel> bounds;
 				center.reserve(toRender.size()/2);
 				bounds.reserve(toRender.size()/2);
-				int toSize = toRender.size();
-				int counter = 0;
+				unsigned int toSize = toRender.size();
+				unsigned int counter = 0;
 				while (counter<toSize)
 				{	
 					center.push_back(toRender[counter++]);
@@ -1327,61 +1366,57 @@ void RenderCanvas::renderStart(void)
 						bounds.push_back(toRender[counter++]);
 				}				
 				toRender.clear();
-				int centerSize = center.size()-1;
-				int boundsSize = bounds.size()-1;
-				int boundsCounter = 0;
-				int toSizeD2 = toSize/2;
+				unsigned int centerSize = center.size()-1;
+				unsigned int boundsSize = bounds.size()-1;
+				unsigned int boundsCounter = 0;
+				unsigned int toSizeD2 = toSize/2;
 				for(counter = 0; counter<toSizeD2; counter++)
 				{	if(centerSize >= 0)
 						toRender.push_back(center[centerSize--]);
-					else
-						int kkkk = 0;
 					if(boundsCounter <= boundsSize )
-						toRender.push_back(bounds[boundsCounter++]);				
-					else
-						int kkkk = 0;
+						toRender.push_back(bounds[boundsCounter++]);
 				}
 		}
 		
-		int totalQ = jobWidth * jobHeight;
+		unsigned int totalQ = jobWidth * jobHeight;
 
-		int id = 0;	
+		unsigned int id = 0;	
+		unsigned int iJob = 0;
 
 		vector<Pixel> current;
 		current.reserve(totalQ);
-		for(int y=0; y < divisions; y++)	
+		for(unsigned int y=0; y < divisions; y++)	
 		{
-			for(int x=0; x < divisions; x++)
+			for(unsigned int x=0; x < divisions; x++)
 			{		
 				if(id < toRender.size())
 				{
-					for(int i = 0; i<totalQ; i++)
+					for(unsigned int i = 0; i<totalQ; i++)
 					{	
 						if(id >= toRender.size())
 							break;
 						current.push_back(toRender[id]);					
 						id++;
 					}
-
-					int iJob = rand();
+					iJob++;
 					queue->AddJob(tJOB(tJOB::eID_THREAD_JOB, wxString::Format(wxT("%u"), iJob), current));
 					current.clear();
 				}
 			}		
 
-		}			
+		}	
 		if(id < pixelsToRender)
 		{
 			while(id < pixelsToRender)
 			{
-				for(int i = 0; i < totalQ; i++)
+				for(unsigned int i = 0; i < totalQ; i++)
 				{
 					current.push_back(toRender[id]);
 					id++;
 					if(id == pixelsToRender)
 						i = totalQ;
 				}
-				int iJob = rand();
+				iJob++;
 				queue->AddJob(tJOB(tJOB::eID_THREAD_JOB, wxString::Format(wxT("%u"), iJob), current));
 				current.clear();
 			}
@@ -1402,7 +1437,7 @@ void RenderCanvas::renderStart(void)
 	//threadNumber = 1;							// simulate singe core cpu
 	if(threadNumber >= 1000)
 		threadNumber = 1000;
-    for(int i=0; i< threadNumber; i++)
+    for(unsigned int i=0; i< threadNumber; i++)
 	{	
 #if SAMPLE_HACK>0
 		World* wo = new World();
@@ -1412,16 +1447,34 @@ void RenderCanvas::renderStart(void)
 #endif
 		OnStart();		
 	}
+	// add CriticalSelections for the threads
+	for(unsigned int i=0; i<theThreads.size(); i++)
+	{
+		threadsCS.push_back(new wxCriticalSection());
+	}
+	
+	try 
+	{
+		if(theThreads.size() > 2)
+			bool concurrent = wxThread::SetConcurrency(theThreads.size() + 2); // 1 for manager 1 for frame
+
+	}
+	catch(...)
+	{
+		wxMessageBox(wxT("RenderStart() could not be completed - Try and comment out wxThread::SetConcurrency in RenderCanvas::renderStart"));
+	}
+
+
 	wxGetApp().SetStatusText( wxT( "Rendering..." ) );
 
 
 
 }
 
-void RenderCanvas::spiral(int &x, int &y, int &width, int &height, Direction direction, std::vector<Pixel> &pixels)
+void RenderCanvas::spiral(unsigned int &x, unsigned int &y, unsigned int &width, unsigned int &height, Direction direction, std::vector<Pixel> &pixels)
 {
 	Direction newDirection = RIGHT;
-	int value = 0;	
+	unsigned int value = 0;	
 	switch(direction)
 	{
 		case RIGHT:			
@@ -1474,12 +1527,12 @@ void RenderCanvas::spiral(int &x, int &y, int &width, int &height, Direction dir
 
 void RenderCanvas::spiral(std::vector<Pixel> &pixels)
 {
-	int x = 0;
-	int y = 0;
-	int width = w->vp.hres-1;
-	int height = w->vp.vres-1;
+	unsigned int x = 0;
+	unsigned int y = 0;
+	unsigned int width = w->vp.hres-1;
+	unsigned int height = w->vp.vres-1;
 	Direction direction = RIGHT;
-	int value = 0;
+	unsigned int value = 0;
 	while(pixels.size() < pixelsToRender)
 	{
 		value = 0;
@@ -1539,12 +1592,12 @@ void RenderCanvas::OnStart(wxCommandEvent& WXUNUSED(event)) // start one worker 
 	WorkerThread* thread=new WorkerThread(queue, this, w, id); // create a new worker thread, increment thread counter (this implies, thread will start OK)
     theThreads.push_back(thread);	
 	if (thread->Run() != wxTHREAD_NO_ERROR )
-    {	wxLogError("Can't create the worker thread!");
+    {	wxLogError((wxChar*)"Can't create the worker thread!");
 		delete theThreads.back();
 		threads.back() = NULL;
 		threads.pop_back(); }
 	else
-		thread->SetPriority(20);
+		thread->SetPriority(this->threadNumber);
 }
 
 void RenderCanvas::OnStart() // start one worker thread
@@ -1557,10 +1610,14 @@ void RenderCanvas::OnStart() // start one worker thread
 #else
 	WorkerThread* thread=new WorkerThread(queue, this, w, id);
 #endif
+
 	theThreads.push_back(thread);
-	thread->SetPriority(40);
+	// totalCPU cores 100% minus manager priority and the frames priority (100) divided by how many threads being used
+	int priority = (totalThreads * 100 - manager->GetPriority() - 100 ) / this->threadNumber;
+	priority = max(min((priority), 100), 5); // make sure not above 100, or less than 5
+	thread->SetPriority(priority);
 	if (thread->Run() != wxTHREAD_NO_ERROR )
-    {	wxLogError("Can't create the thread!");
+    {	wxLogError((wxChar*)"Can't create the thread!");
 		delete theThreads.back();
 		threads.back() = NULL;
 		threads.pop_back(); }
@@ -1605,24 +1662,59 @@ void RenderCanvas::OnQuit()
 	{  for(size_t t=0; t<threads.size(); ++t) 
 			queue->AddJob(tJOB(tJOB::eID_THREAD_EXIT, wxEmptyString), Queue::eHIGHEST); // send all running threads the "EXIT" signal
 	} 
+	wxThread::This()->Sleep(10);
+
 	if(!theThreads.empty())
 		{	if(theThreads.size() == 1)
 			{	theThreads.pop_back();	
 				theThreads.clear();
 	}
 	else
-		{
-			for (iter = theThreads.begin(); iter < theThreads.end(); iter++)
+		{   unsigned int id = 0;
+			for (iter = theThreads.begin(); iter < theThreads.end(); iter++, id++)
 			{
-				if((*iter) != NULL)
-				{		
-					//(*iter)->Delete();
-					//delete (*iter);
-					//(*iter) = NULL;
-					theThreads.pop_back();						
+				{   wxCriticalSectionLocker enter(*threadsCS[id]);
+					if((*iter) != NULL)
+					{	if ((*iter)->Delete() != wxTHREAD_NO_ERROR )
+							wxLogError("Can't delete the thread!");					
+					}
 				}
 			}
+			while (1)
+			{
+				{   // was the ~WorkerThread() function executed?
+					unsigned int id = 0;
+					unsigned int cleaned = 0;
+					for (iter = theThreads.begin(); iter < theThreads.end(); iter++, id++)
+					{   
+						{
+							wxCriticalSectionLocker enter(*threadsCS[id]);
+							if ((*iter) == NULL)
+							{
+								cleaned++;
+							}
+						}
+					}
+					if(cleaned == theThreads.size())
+						break;
+				}
+
+				// wait for thread completion
+				wxThread::This()->Sleep(1);
+			}
+
 			theThreads.clear();
+			
+			// Cleanup the CriticalSelections that were dynamically allocated
+			for(unsigned int i=0; i<threadsCS.size();i++)
+			{
+				if(threadsCS[i] != NULL)
+				{
+					delete threadsCS[i];
+					threadsCS[i] = NULL;
+				}
+			}
+			threadsCS.clear();
 		}
 	}
 	
@@ -1635,7 +1727,7 @@ void RenderCanvas::OnQuit()
 /********************* RenderPixel ********************************************/
 /******************************************************************************/
 
-RenderPixel::RenderPixel(int _x, int _y, int _red, int _green, int _blue)
+RenderPixel::RenderPixel(unsigned int _x, unsigned int _y, unsigned int _red, unsigned int _green, unsigned int _blue)
  : x(_x), y(_y), red(_red), green(_green), blue(_blue)
 {}
 
@@ -1657,6 +1749,7 @@ END_EVENT_TABLE()
 
 void RenderThread::setPixel(int x, int y, int red, int green, int blue)
 {  wxCriticalSectionLocker locker(critical);
+   //pixels->reserve(pixels->size() + 1);
    pixels->push_back(new RenderPixel(x, y, red, green, blue));
    return;
 }
@@ -1665,8 +1758,31 @@ void RenderThread::setPixel(const list<RenderedInt>& re)
 {
    wxCriticalSectionLocker locker(critical);
    list<RenderedInt>::const_iterator it;
+   pixels->reserve(pixels->size() + re.size());
    for(it=re.begin(); it != re.end(); it++)
    {   pixels->push_back(new RenderPixel(it->x, it->y, it->r, it->g, it->b));
+   }
+   return;
+}
+
+void RenderThread::setPixel(const vector<RenderedInt>& re)
+{
+   wxCriticalSectionLocker locker(critical);
+   vector<RenderedInt>::const_iterator it;
+   pixels->reserve(pixels->size() + re.size());
+   for(it=re.begin(); it != re.end(); it++)
+   {   pixels->push_back(new RenderPixel(it->x, it->y, it->r, it->g, it->b));
+   }
+   return;
+}
+
+void RenderThread::setPixel(const vector<RenderPixel*>& re)
+{
+   wxCriticalSectionLocker locker(critical);
+   vector<RenderPixel*>::const_iterator it;
+   pixels->reserve(pixels->size() + re.size());
+   for(it=re.begin(); it != re.end(); it++)
+   {   pixels->push_back(*it);
    }
    return;
 }
@@ -1730,4 +1846,12 @@ void *RenderThread::Entry()
 		wxThread::Sleep(50); // Sleep for 50 milliseconds		
 	}
 	return NULL;
+}
+
+RenderThread::~RenderThread()
+{
+	 wxCriticalSectionLocker enter(canvas->managerCS);
+
+     // the thread is being destroyed; make sure not to leave dangling pointers around
+     canvas->manager = NULL;
 }

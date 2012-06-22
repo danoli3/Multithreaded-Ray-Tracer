@@ -6,6 +6,7 @@
 #define __SMART_POINTER__
 
 #include "ReferenceCount.h"
+#include "Constants.h"
 
 //  Copyright (C) 2011 Daniel Rosser
 //	This program is free software: you can redistribute it and/or modify

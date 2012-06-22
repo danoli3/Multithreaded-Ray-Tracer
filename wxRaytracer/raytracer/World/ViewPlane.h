@@ -13,8 +13,7 @@ class ViewPlane {
 		float			gamma;						// gamma correction factor
 		float			inv_gamma;					// the inverse of the gamma correction factor
 		bool			show_out_of_gamut;			// display red if RGBColor out of gamut
-		
-									
+		int max_depth;
 	
 	public:
 	

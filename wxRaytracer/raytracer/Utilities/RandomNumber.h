@@ -47,7 +47,7 @@ public:
 	}
 
 	RandomNumber* 
-	RandomNumber::clone (void) const {
+	clone (void) const {
 		return (new RandomNumber(*this));
 	}
 	

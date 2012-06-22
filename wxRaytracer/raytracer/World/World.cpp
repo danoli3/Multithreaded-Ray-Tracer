@@ -129,7 +129,7 @@ World::render_scene(const std::vector<Pixel>& pixels) const {
 
 	ray.d = Vector3D(0, 0, -1);
 	
-	for(int i = 0; i< pixels.size(); i++)
+	for(unsigned int i = 0; i< pixels.size(); i++)
 	{			
 			Pixel screen_pixel = pixels[i];		
 			ray.o = Point3D(s * (screen_pixel.x - hres / 2.0 + 0.5), s * (screen_pixel.y - vres / 2.0 + 0.5), zw);
@@ -226,7 +226,11 @@ void
 World::display_pixel(const list<RenderedPixel>& render) const {
 	
 	list<RenderedPixel>::const_iterator it;	
-	list<RenderedInt> rendered;
+	//list<RenderedInt> rendered;
+	//vector<RenderedInt> rendered;
+	vector<RenderPixel*> rendered;
+
+	rendered.reserve(render.size());
 	for ( it=render.begin() ; it != render.end(); it++)
 	{   
 		RGBColor mapped_color;
@@ -244,13 +248,20 @@ World::display_pixel(const list<RenderedPixel>& render) const {
 	   //have to start from max y coordinate to convert to screen coordinates
 	   //int x = it->xy.x;
 	   int y = vp.vres - it->xy.y - 1;
-	   RenderedInt rend;
+	   /*RenderedInt rend;
 	   rend.x = it->xy.x;
 	   rend.y = y;
 	   rend.r = (int)(mapped_color.r * 255);
        rend.g = (int)(mapped_color.g * 255);
        rend.b = (int)(mapped_color.b * 255);
-	   rendered.push_back(rend);
+	   rendered.push_back(rend);*/
+
+	   rendered.push_back(new RenderPixel);
+	   rendered.back()->x = it->xy.x;
+	   rendered.back()->y = y;
+	   rendered.back()->red = (int)(mapped_color.r * 255);
+       rendered.back()->green = (int)(mapped_color.g * 255);
+       rendered.back()->blue = (int)(mapped_color.b * 255);	 
 	}
 	
    paintArea->setPixel(rendered);

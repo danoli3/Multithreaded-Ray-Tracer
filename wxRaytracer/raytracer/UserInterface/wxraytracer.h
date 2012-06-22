@@ -6,7 +6,7 @@
  *
  * Author : Sverre Kvaale <sverre@kvaale.com>
  * Multithreading Author: Daniel Rosser <danoli3@gmail.com>
- * Version: 1.2.5
+ * Version: 1.3.1
  */
 #include <wx/setup.h>
 #include <wx/wx.h>
@@ -16,13 +16,6 @@
 #include <wx/app.h>
 #include <wx/rawbmp.h>
 #include <wx/event.h>
-#include "World.h"
-#include <vector>
-#include "MultiThread.h"
-
-//#ifdef _DEBUG
-//#include "vld.h"
-//#endif
 
 #include <stdlib.h>
 #include <assert.h>
@@ -33,13 +26,15 @@
 #include <numeric>
 #include <iterator>
 
-#define SAMPLE_HACK 0; // 0 - 1 shared world object
-					   // 1 - Creates multiple instances of World (1 per thread)
-#define WXWIDGETS292 0; // 0 is standard WxWidgets 2.6 from 2007
-						// 1 is WxWidgets 2.9.2
-				      
+#include "World.h"
+#include <vector>
+#include "MultiThread.h"
 
-//using namespace std;
+#define SAMPLE_HACK 0 // 0 - (One shared world object) = Ideal
+					   // 1 - Creates multiple instances of World (1 per thread) 
+#define WXWIDGETS292 0 // 0 is standard WxWidgets 2.6->2.8
+						// 1 is WxWidgets 2.9.2 (Due to changes in some declarations)
+				      
 
 class wxraytracerFrame;
 class RenderCanvas;
@@ -48,7 +43,7 @@ class WorkerThread;
 class RenderPixel;
 
 #if WXWIDGETS292>0
-	wxDECLARE_EVENT(THE_THREADS, wxThreadEvent); // 2.9.2 way of declaring events
+	wxDECLARE_EVENT(wxEVT_THREAD, wxThreadEvent); // 2.9.2 way of declaring events
 #else
 	DECLARE_EVENT_TYPE(wxEVT_THREAD, -1)
 #endif
@@ -59,6 +54,7 @@ class tJOB
   public:
     enum tCOMMANDS                    // list of commands that are currently implemented
     {
+	  eID_THREAD_EXIT_SUCESS = 0,
       eID_THREAD_EXIT=wxID_EXIT,	  // thread should exit or wants to exit
       eID_THREAD_NULL=wxID_HIGHEST+1, // dummy command
       eID_THREAD_STARTED,		      // worker thread has started OK
@@ -103,17 +99,20 @@ class tJOB
 class WorkerThread : public wxThread
 {
   public:
-    WorkerThread(Queue* pQueue, RenderCanvas* canvas, World* world, int id=0) : wxThread(), queue(pQueue), canvas(canvas), world(world), id(id) { assert(pQueue); wxThread::Create(); }
-  
+    WorkerThread(Queue* pQueue, RenderCanvas* canvas, World* world, int id=0) : wxThread(wxTHREAD_DETACHED), queue(pQueue), canvas(canvas), world(world), id(id) { assert(pQueue); wxThread::Create(); }
+    ~WorkerThread();
+	virtual tJOB::tCOMMANDS OnJob();
+	unsigned int getID() const;
+
   private:
+	virtual wxThread::ExitCode Entry();
+
     Queue* queue;
-    int id;
+    unsigned int id;
 	RenderCanvas* canvas;
 	World* world;
   
-    virtual wxThread::ExitCode Entry();
-  
-    virtual void OnJob();
+       
     
 
 }; // class WorkerThread : public wxThread
@@ -204,14 +203,14 @@ enum
    Menu_Render_Mode_Grid,
    Menu_Render_Mode_Random,
    Menu_Render_Mode_Spiral_Out,
-   Menu_Render_Mode_Spiral_In, 
+   Menu_Render_Mode_Spiral_In,
    Menu_Render_Mode_Spiral_In_And_Out,
    Menu_Render_Mode_Spiral_In_And_Out2,
    Menu_Render_Mode_Sequence,
    Menu_Render_Mode_Sequence2,
    Menu_Render_Display_Pixel,
    Menu_Render_Display_Row,
-   Menu_Render_Display_Job,     
+   Menu_Render_Display_Job,
    Menu_Division_Default,
    Menu_Division_Single,
    Menu_Division_Dual,
@@ -268,35 +267,37 @@ public:
    void OnStart();
 
    // recursive function to calculate spiral
-   void spiral(int &x, int &y, int &width, int &height, Direction direction, std::vector<Pixel> &pixels);
+   void spiral(unsigned int &x, unsigned int &y, unsigned int &width, unsigned int &height, Direction direction, std::vector<Pixel> &pixels);
    // changed spiral function to be loop based
    void spiral(std::vector<Pixel> &pixels);
 
-   int totalThreads; 
-   int threadNumber;
-   int divisions;
-   int divisionsNumber;
+   unsigned int totalThreads; 
+   unsigned int threadNumber;
+   unsigned int divisions;
+   unsigned int divisionsNumber;
    RenderMode renderMode;
    RenderDisplay renderDisplay;
    World* w;
    RenderThread* manager;
-   int samples;
+   unsigned int samples;
+   wxCriticalSection managerCS;
+   vector<wxCriticalSection*> threadsCS;    // protects the thread pointers
+   vector<WorkerThread*> theThreads;
 protected:
    wxBitmap *theImage;
-   wxStopWatch* timer;
-   
-  
+   wxStopWatch* timer; 
    Queue* queue;   
-   std::list<int> threads; 
-   vector<WorkerThread*> theThreads;
+   std::list<unsigned int> threads; 
+   
+   
 #if SAMPLE_HACK>0
    vector<World*> theWorlds;
 #endif
    vector<WorkerThread*>::iterator iter;
 
 private:    
-   long pixelsRendered;
-   long pixelsToRender;
+   unsigned long pixelsRendered;
+   unsigned long pixelsToRender;
    wxTimer updateTimer;
    
    DECLARE_EVENT_TABLE()
@@ -307,11 +308,15 @@ private:
 class RenderPixel
 {
 public:
-   RenderPixel(int x, int y, int red, int green, int blue);
+   RenderPixel()
+	   : x(0), y(0), red(0), green(0), blue(0)
+   {}
+
+   RenderPixel(unsigned int x, unsigned int y, unsigned int red, unsigned int green, unsigned int blue);
 
 public:
-   int x, y;
-   int red, green, blue;
+   unsigned int x, y;
+   unsigned int red, green, blue;
 };
 
 
@@ -323,11 +328,14 @@ DECLARE_EVENT_TYPE(wxEVT_RENDER, -1)
 class RenderThread : public wxThread
 {
 public:
-   RenderThread(RenderCanvas* c) : wxThread(wxTHREAD_JOINABLE), canvas(c), timer(NULL), stop(false) {}
+   RenderThread(RenderCanvas* c) : wxThread(wxTHREAD_DETACHED), canvas(c), timer(NULL), stop(false) {}
    virtual void *Entry();
    virtual void OnExit();
+   ~RenderThread();
    virtual void setPixel(int x, int y, int red, int green, int blue);
    virtual void setPixel(const list<RenderedInt>& rendered);
+   virtual void setPixel(const vector<RenderedInt>& rendered);
+   virtual void setPixel(const vector<RenderPixel*>& rendered);
    virtual bool Stop() const;
    virtual void StopRendering();
    virtual void SetRenderDisplay(RenderDisplay display);
