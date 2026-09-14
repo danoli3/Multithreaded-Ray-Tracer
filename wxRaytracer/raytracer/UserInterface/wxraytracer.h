@@ -32,8 +32,15 @@
 
 #define SAMPLE_HACK 0 // 0 - (One shared world object) = Ideal
 					   // 1 - Creates multiple instances of World (1 per thread) 
-#define WXWIDGETS292 0 // 0 is standard WxWidgets 2.6->2.8
-						// 1 is WxWidgets 2.9.2 (Due to changes in some declarations)
+// Auto-detect wxWidgets >= 2.9 API (wxDECLARE_EVENT etc.).
+// Override on the compiler command line with -DWXWIDGETS292=0/1 if needed.
+#ifndef WXWIDGETS292
+#if wxCHECK_VERSION(2, 9, 0)
+#define WXWIDGETS292 1
+#else
+#define WXWIDGETS292 0 // standard WxWidgets 2.6->2.8
+#endif
+#endif // WXWIDGETS292 // 1 is WxWidgets 2.9+ (Due to changes in some declarations)
 				      
 
 class wxraytracerFrame;
@@ -320,7 +327,11 @@ public:
 };
 
 
+#if WXWIDGETS292>0
+wxDECLARE_EVENT(wxEVT_RENDER, wxCommandEvent);
+#else
 DECLARE_EVENT_TYPE(wxEVT_RENDER, -1)
+#endif
 #define ID_RENDER_COMPLETED 100
 #define ID_RENDER_NEWPIXEL  101
 #define ID_RENDER_UPDATE    102
