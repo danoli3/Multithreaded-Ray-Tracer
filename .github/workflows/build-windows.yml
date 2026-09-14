@@ -1,0 +1,133 @@
+# Windows CI: VS2022 (v143) and VS2026 (v145).
+#
+# Both jobs build wxWidgets 3.2.x from source once (cached) into ./wx and point
+# WXWIN / wxWidgets_ROOT_DIR at it — the same layout the .sln files expect.
+name: Windows builds (VS2022 + VS2026)
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+env:
+  WX_VERSION: "3.2.10"
+
+jobs:
+  vs2022:
+    name: VS2022 (v143) — wxRaytracerVS2022.sln + CMake
+    runs-on: windows-2022
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up MSVC (VS2022, x64)
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Set up MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Cache wxWidgets build
+        id: wx-cache
+        uses: actions/cache@v4
+        with:
+          path: wx
+          key: wx-${{ env.WX_VERSION }}-vs2022-x64-shared
+
+      - name: Download wxWidgets
+        if: steps.wx-cache.outputs.cache-hit != 'true'
+        run: |
+          $url = "https://github.com/wxWidgets/wxWidgets/releases/download/v$env:WX_VERSION/wxWidgets-$env:WX_VERSION.zip"
+          Invoke-WebRequest -Uri $url -OutFile wx.zip
+          Expand-Archive wx.zip -DestinationPath .
+          Move-Item "wxWidgets-$env:WX_VERSION" wx
+
+      - name: Build wxWidgets (shared, x64, Debug + Release)
+        if: steps.wx-cache.outputs.cache-hit != 'true'
+        working-directory: wx/build/msw
+        run: |
+          nmake -f makefile.vc BUILD=release SHARED=1 TARGET_CPU=X64
+          nmake -f makefile.vc BUILD=debug SHARED=1 TARGET_CPU=X64
+
+      - name: Build wxRaytracerVS2022.sln (Release|x64)
+        env:
+          WXWIN: ${{ github.workspace }}\wx
+        run: msbuild wxRaytracerVS2022.sln /p:Configuration=Release /p:Platform=x64 /m /v:m
+
+      - name: Build wxRaytracerVS2022.sln (Debug|x64)
+        env:
+          WXWIN: ${{ github.workspace }}\wx
+        run: msbuild wxRaytracerVS2022.sln /p:Configuration=Debug /p:Platform=x64 /m /v:m
+
+      - name: Configure + build with CMake (VS 17 2022 generator)
+        run: |
+          cmake -S . -B build-cmake -G "Visual Studio 17 2022" -A x64 "-DwxWidgets_ROOT_DIR=${{ github.workspace }}\wx"
+          cmake --build build-cmake --config Release --parallel
+
+  vs2026:
+    name: VS2026 (v145) — wxRaytracerVS2026.sln + CMake
+    # Public-beta image with Visual Studio 2026 (v145). If this label is not
+    # available on your plan yet, switch to windows-latest: the CMake step
+    # below still exercises the newest installed toolchain there.
+    runs-on: windows-2025-vs2026
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up MSVC (VS2026, x64)
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Set up MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Show toolchain versions
+        run: |
+          cl 2>&1 | Select-Object -First 2
+          cmake --version | Select-Object -First 1
+
+      - name: Cache wxWidgets build
+        id: wx-cache
+        uses: actions/cache@v4
+        with:
+          path: wx
+          key: wx-${{ env.WX_VERSION }}-vs2026-x64-shared
+
+      - name: Download wxWidgets
+        if: steps.wx-cache.outputs.cache-hit != 'true'
+        run: |
+          $url = "https://github.com/wxWidgets/wxWidgets/releases/download/v$env:WX_VERSION/wxWidgets-$env:WX_VERSION.zip"
+          Invoke-WebRequest -Uri $url -OutFile wx.zip
+          Expand-Archive wx.zip -DestinationPath .
+          Move-Item "wxWidgets-$env:WX_VERSION" wx
+
+      - name: Build wxWidgets (shared, x64, Debug + Release)
+        if: steps.wx-cache.outputs.cache-hit != 'true'
+        working-directory: wx/build/msw
+        run: |
+          nmake -f makefile.vc BUILD=release SHARED=1 TARGET_CPU=X64
+          nmake -f makefile.vc BUILD=debug SHARED=1 TARGET_CPU=X64
+
+      # The vs2026 .vcxproj prefers wx's vc145_* lib dirs and falls back to
+      # vc143_* (older wx names its dir vc143 even when built with VS2026),
+      # so no extra wiring is needed whichever dir nmake produced.
+      - name: Build wxRaytracerVS2026.sln (Release|x64)
+        env:
+          WXWIN: ${{ github.workspace }}\wx
+        run: msbuild wxRaytracerVS2026.sln /p:Configuration=Release /p:Platform=x64 /m /v:m
+
+      - name: Build wxRaytracerVS2026.sln (Debug|x64)
+        env:
+          WXWIN: ${{ github.workspace }}\wx
+        run: msbuild wxRaytracerVS2026.sln /p:Configuration=Debug /p:Platform=x64 /m /v:m
+
+      - name: Configure + build with CMake (VS 18 2026 generator)
+        run: |
+          cmake -S . -B build-cmake -G "Visual Studio 18 2026" -A x64 "-DwxWidgets_ROOT_DIR=${{ github.workspace }}\wx"
+          cmake --build build-cmake --config Release --parallel

@@ -1,0 +1,38 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "(Windows) Launch wxRaytracer",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/Release/wxRaytracer.exe",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "preLaunchTask": "CMake: build"
+    },
+    {
+      "name": "(Linux) Launch wxRaytracer",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/wxRaytracer",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "MIMode": "gdb",
+      "preLaunchTask": "CMake: build"
+    },
+    {
+      "name": "(macOS) Launch wxRaytracer",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/wxRaytracer",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "MIMode": "lldb",
+      "preLaunchTask": "CMake: build"
+    }
+  ]
+}

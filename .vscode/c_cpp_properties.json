@@ -1,0 +1,36 @@
+{
+  "configurations": [
+    {
+      "name": "Win32 (wxWidgets 3.2)",
+      "includePath": [
+        "${workspaceFolder}/wxRaytracer/raytracer/**",
+        "${env:WXWIN}/include",
+        "${env:WXWIN}/include/msvc"
+      ],
+      "defines": [
+        "_WINDOWS",
+        "__WXMSW__",
+        "WXUSINGDLL",
+        "UNICODE",
+        "_UNICODE"
+      ],
+      "windowsSdkVersion": "10.0",
+      "compilerPath": "cl.exe",
+      "cStandard": "c17",
+      "cppStandard": "c++17",
+      "intelliSenseMode": "windows-msvc-x64"
+    },
+    {
+      "name": "Linux (wxWidgets 3.2)",
+      "includePath": [
+        "${workspaceFolder}/wxRaytracer/raytracer/**"
+      ],
+      "defines": [],
+      "compilerPath": "/usr/bin/g++",
+      "cStandard": "c17",
+      "cppStandard": "c++17",
+      "intelliSenseMode": "linux-gcc-x64"
+    }
+  ],
+  "version": 4
+}

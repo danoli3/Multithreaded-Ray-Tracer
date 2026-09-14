@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>16.0</VCProjectVersion>
+    <ProjectGuid>{2A31975B-19D0-4367-884B-A84DF3DB8DEA}</ProjectGuid>
+    <ProjectName>wxRaytracer</ProjectName>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <!-- Requires wxWidgets 3.2.x built for v142. Set the WXWIN environment
+       variable to your wx root, e.g. C:\wxWidgets-3.2.5 -->
+  <PropertyGroup>
+    <OutDir>bin\vs2019\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>obj\vs2019\$(Platform)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <!-- WIN32 is defined for the Win32 platform only; the compiler predefines
+       _WIN32 (both platforms) and _WIN64 (x64). SDL checks stay off: this is
+       a legacy codebase and /sdl elevates warnings this code still trips. -->
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>false</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;__WXMSW__;WXUSINGDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(WXWIN)\include;$(WXWIN)\include\msvc;raytracer\BRDFs;raytracer\build;raytracer\Cameras;raytracer\GeometricObjects;raytracer\Lights;raytracer\Materials;raytracer\Samplers;raytracer\Tracers;raytracer\UserInterface;raytracer\Utilities;raytracer\World;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <LanguageStandard>stdcp17</LanguageStandard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(WXWIN)\lib\vc142_dll;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>false</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;_WINDOWS;__WXMSW__;WXUSINGDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(WXWIN)\include;$(WXWIN)\include\msvc;raytracer\BRDFs;raytracer\build;raytracer\Cameras;raytracer\GeometricObjects;raytracer\Lights;raytracer\Materials;raytracer\Samplers;raytracer\Tracers;raytracer\UserInterface;raytracer\Utilities;raytracer\World;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <LanguageStandard>stdcp17</LanguageStandard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(WXWIN)\lib\vc142_x64_dll;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>false</SDLCheck>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;__WXMSW__;WXUSINGDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(WXWIN)\include;$(WXWIN)\include\msvc;raytracer\BRDFs;raytracer\build;raytracer\Cameras;raytracer\GeometricObjects;raytracer\Lights;raytracer\Materials;raytracer\Samplers;raytracer\Tracers;raytracer\UserInterface;raytracer\Utilities;raytracer\World;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <LanguageStandard>stdcp17</LanguageStandard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>$(WXWIN)\lib\vc142_dll;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>false</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_WINDOWS;__WXMSW__;WXUSINGDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(WXWIN)\include;$(WXWIN)\include\msvc;raytracer\BRDFs;raytracer\build;raytracer\Cameras;raytracer\GeometricObjects;raytracer\Lights;raytracer\Materials;raytracer\Samplers;raytracer\Tracers;raytracer\UserInterface;raytracer\Utilities;raytracer\World;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <LanguageStandard>stdcp17</LanguageStandard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>$(WXWIN)\lib\vc142_x64_dll;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="raytracer\BRDFs\BRDF.cpp" />
+    <ClCompile Include="raytracer\BRDFs\Lambertian.cpp" />
+    <ClCompile Include="raytracer\build\BuildShadedObjects.cpp" />
+    <ClCompile Include="raytracer\Cameras\Camera.cpp" />
+    <ClCompile Include="raytracer\Cameras\Pinhole.cpp" />
+    <ClCompile Include="raytracer\GeometricObjects\GeometricObject.cpp" />
+    <ClCompile Include="raytracer\GeometricObjects\Plane.cpp" />
+    <ClCompile Include="raytracer\GeometricObjects\Sphere.cpp" />
+    <ClCompile Include="raytracer\Lights\Ambient.cpp" />
+    <ClCompile Include="raytracer\Lights\Directional.cpp" />
+    <ClCompile Include="raytracer\Lights\Light.cpp" />
+    <ClCompile Include="raytracer\Materials\Material.cpp" />
+    <ClCompile Include="raytracer\Materials\Matte.cpp" />
+    <ClCompile Include="raytracer\Samplers\Hammersley.cpp" />
+    <ClCompile Include="raytracer\Samplers\Jittered.cpp" />
+    <ClCompile Include="raytracer\Samplers\MultiJittered.cpp" />
+    <ClCompile Include="raytracer\Samplers\NRooks.cpp" />
+    <ClCompile Include="raytracer\Samplers\PureRandom.cpp" />
+    <ClCompile Include="raytracer\Samplers\Regular.cpp" />
+    <ClCompile Include="raytracer\Samplers\Sampler.cpp" />
+    <ClCompile Include="raytracer\Tracers\AreaLighting.cpp" />
+    <ClCompile Include="raytracer\Tracers\MultipleObjects.cpp" />
+    <ClCompile Include="raytracer\Tracers\RayCast.cpp" />
+    <ClCompile Include="raytracer\Tracers\SingleSphere.cpp" />
+    <ClCompile Include="raytracer\Tracers\Tracer.cpp" />
+    <ClCompile Include="raytracer\Tracers\Whitted.cpp" />
+    <ClCompile Include="raytracer\UserInterface\wxraytracer.cpp" />
+    <ClCompile Include="raytracer\Utilities\Maths.cpp" />
+    <ClCompile Include="raytracer\Utilities\Matrix.cpp" />
+    <ClCompile Include="raytracer\Utilities\MTRand.cpp" />
+    <ClCompile Include="raytracer\Utilities\Normal.cpp" />
+    <ClCompile Include="raytracer\Utilities\Point2D.cpp" />
+    <ClCompile Include="raytracer\Utilities\Point3D.cpp" />
+    <ClCompile Include="raytracer\Utilities\Ray.cpp" />
+    <ClCompile Include="raytracer\Utilities\RGBColor.cpp" />
+    <ClCompile Include="raytracer\Utilities\ShadeRec.cpp" />
+    <ClCompile Include="raytracer\Utilities\Vector3D.cpp" />
+    <ClCompile Include="raytracer\World\ViewPlane.cpp" />
+    <ClCompile Include="raytracer\World\World.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="raytracer\BRDFs\BRDF.h" />
+    <ClInclude Include="raytracer\BRDFs\Lambertian.h" />
+    <ClInclude Include="raytracer\Cameras\Camera.h" />
+    <ClInclude Include="raytracer\Cameras\Pinhole.h" />
+    <ClInclude Include="raytracer\GeometricObjects\GeometricObject.h" />
+    <ClInclude Include="raytracer\GeometricObjects\Plane.h" />
+    <ClInclude Include="raytracer\GeometricObjects\Sphere.h" />
+    <ClInclude Include="raytracer\Lights\Ambient.h" />
+    <ClInclude Include="raytracer\Lights\Directional.h" />
+    <ClInclude Include="raytracer\Lights\Light.h" />
+    <ClInclude Include="raytracer\Materials\Material.h" />
+    <ClInclude Include="raytracer\Materials\Matte.h" />
+    <ClInclude Include="raytracer\Samplers\Hammersley.h" />
+    <ClInclude Include="raytracer\Samplers\Jittered.h" />
+    <ClInclude Include="raytracer\Samplers\MultiJittered.h" />
+    <ClInclude Include="raytracer\Samplers\NRooks.h" />
+    <ClInclude Include="raytracer\Samplers\PureRandom.h" />
+    <ClInclude Include="raytracer\Samplers\Regular.h" />
+    <ClInclude Include="raytracer\Samplers\Sampler.h" />
+    <ClInclude Include="raytracer\Tracers\AreaLighting.h" />
+    <ClInclude Include="raytracer\Tracers\MultipleObjects.h" />
+    <ClInclude Include="raytracer\Tracers\RayCast.h" />
+    <ClInclude Include="raytracer\Tracers\SingleSphere.h" />
+    <ClInclude Include="raytracer\Tracers\Tracer.h" />
+    <ClInclude Include="raytracer\Tracers\Whitted.h" />
+    <ClInclude Include="raytracer\UserInterface\wxraytracer.h" />
+    <ClInclude Include="raytracer\Utilities\Constants.h" />
+    <ClInclude Include="raytracer\Utilities\Maths.h" />
+    <ClInclude Include="raytracer\Utilities\Matrix.h" />
+    <ClInclude Include="raytracer\Utilities\MTRand.h" />
+    <ClInclude Include="raytracer\Utilities\MultiThread.h" />
+    <ClInclude Include="raytracer\Utilities\Normal.h" />
+    <ClInclude Include="raytracer\Utilities\Point2D.h" />
+    <ClInclude Include="raytracer\Utilities\Point3D.h" />
+    <ClInclude Include="raytracer\Utilities\RandomNumber.h" />
+    <ClInclude Include="raytracer\Utilities\Ray.h" />
+    <ClInclude Include="raytracer\Utilities\ReferenceCount.h" />
+    <ClInclude Include="raytracer\Utilities\RGBColor.h" />
+    <ClInclude Include="raytracer\Utilities\ShadeRec.h" />
+    <ClInclude Include="raytracer\Utilities\SmartPointer.h" />
+    <ClInclude Include="raytracer\Utilities\Vector3D.h" />
+    <ClInclude Include="raytracer\World\ViewPlane.h" />
+    <ClInclude Include="raytracer\World\World.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

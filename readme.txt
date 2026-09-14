@@ -69,4 +69,16 @@ A: ) The following files have the main changes from the Skeleton:
 		  -AreaLighting.h/cpp (Added overloaded function for Multithreading)
 		  -RayCast.h/cpp (Added overloaded function for Multithreading)
 
+----------------------------------------------
+Modern builds (VS2019 / VS2022 / VSCode) - see BUILD.md
+----------------------------------------------
+New solutions wxRaytracerVS2019.sln (v142), wxRaytracerVS2022.sln (v143)
+and wxRaytracerVS2026.sln (v145) target wxWidgets 3.2.x (Unicode, Win32 + x64,
+C++17) via the WXWIN env var; CMakeLists.txt + .vscode/ cover VSCode, and
+.github/workflows/build-windows.yml tests VS2022 and VS2026.
+The bundled wxWidgets 2.8.0 tree is legacy-only and cannot link on VS2019+.
+
+Related: openFrameworks port skeleton - danoli3/ofxRayTracer
+https://github.com/danoli3/ofxRayTracer
+
 

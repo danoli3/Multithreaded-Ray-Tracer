@@ -1,0 +1,30 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 18
+VisualStudioVersion = 18.0.0.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "wxRaytracer", "wxRaytracer\wxRaytracer_vs2026.vcxproj", "{A7F051D9-9FD6-485D-8202-A96692E2D8CF}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A7F051D9-9FD6-485D-8202-A96692E2D8CF}.Debug|x64.ActiveCfg = Debug|x64
+		{A7F051D9-9FD6-485D-8202-A96692E2D8CF}.Debug|x64.Build.0 = Debug|x64
+		{A7F051D9-9FD6-485D-8202-A96692E2D8CF}.Debug|x86.ActiveCfg = Debug|Win32
+		{A7F051D9-9FD6-485D-8202-A96692E2D8CF}.Debug|x86.Build.0 = Debug|Win32
+		{A7F051D9-9FD6-485D-8202-A96692E2D8CF}.Release|x64.ActiveCfg = Release|x64
+		{A7F051D9-9FD6-485D-8202-A96692E2D8CF}.Release|x64.Build.0 = Release|x64
+		{A7F051D9-9FD6-485D-8202-A96692E2D8CF}.Release|x86.ActiveCfg = Release|Win32
+		{A7F051D9-9FD6-485D-8202-A96692E2D8CF}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {1CAF8DDF-D33F-4A8D-849D-EA17B9D4DD0C}
+	EndGlobalSection
+EndGlobal

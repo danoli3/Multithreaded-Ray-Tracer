@@ -4,7 +4,8 @@
 //	This C++ code is licensed under the GNU General Public License Version 2.
 //	See the file COPYING.txt for the full license.
 
-#include <algorithm>   // for random_shuffle in Sampler::setup_shuffled_indices
+#include <algorithm>   // for std::shuffle in Sampler::setup_shuffled_indices
+#include <random>        // std::mt19937 (random_shuffle was removed in C++17)
 
 #include "Constants.h"
 #include "Sampler.h"
@@ -170,7 +171,8 @@ Sampler::setup_shuffled_indices(void) {
 		indices.push_back(j);
 	
 	for (int p = 0; p < num_sets; p++) { 
-		random_shuffle(indices.begin(), indices.end());	
+		std::shuffle(indices.begin(), indices.end(),
+			             std::mt19937(std::random_device{}()));
 		
 		for (int j = 0; j < num_samples; j++)
 			shuffled_indices.push_back(indices[j]);

@@ -1,0 +1,55 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "CMake: configure (Windows, wxWidgets)",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "-S", "${workspaceFolder}",
+        "-B", "${workspaceFolder}/build",
+        "-DwxWidgets_ROOT_DIR=${env:WXWIN}"
+      ],
+      "windows": {
+        "args": [
+          "-S", "${workspaceFolder}",
+          "-B", "${workspaceFolder}/build",
+          "-DwxWidgets_ROOT_DIR=${env:WXWIN}"
+        ]
+      },
+      "group": "build",
+      "problemMatcher": [],
+      "detail": "Requires WXWIN env var pointing at wxWidgets 3.2.x"
+    },
+    {
+      "label": "CMake: configure (Linux/macOS, wxWidgets)",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "-S", "${workspaceFolder}",
+        "-B", "${workspaceFolder}/build",
+        "-DCMAKE_BUILD_TYPE=Release"
+      ],
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "CMake: build",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--build", "${workspaceFolder}/build",
+        "--config", "Release",
+        "--parallel"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": [
+        "$msCompile",
+        "$gcc"
+      ]
+    }
+  ]
+}
