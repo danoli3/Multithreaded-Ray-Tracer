@@ -328,7 +328,9 @@ public:
 
 
 #if WXWIDGETS292>0
-wxDECLARE_EVENT(wxEVT_RENDER, wxCommandEvent);
+// wxThreadEvent (2.9+) carries the pixel vector via SetPayload/GetPayload:
+// wxCommandEvent::SetClientData was removed in wx 3.x.
+wxDECLARE_EVENT(wxEVT_RENDER, wxThreadEvent);
 #else
 DECLARE_EVENT_TYPE(wxEVT_RENDER, -1)
 #endif

@@ -2,10 +2,11 @@
 ----------------------------------------------
 
 Based on the Textbook "Ray Tracing from the Ground Up" by Kevin Suffern
-http://www.raytracegroundup.com/
+https://www.amazon.com/Ray-Tracing-Ground-Kevin-Suffern/dp/1568812728
 
-Original Skeleton made by Sverre Kvaale can be found on the downloads page of the textbook's website
-http://www.raytracegroundup.com/downloads.html
+Original Skeleton made by Sverre Kvaale was hosted on the textbook's website
+(raytracegroundup.com, now offline) - archived copy with the Downloads page:
+https://web.archive.org/web/20140314141933/http://www.raytracegroundup.com/
 
 Project Files
 ----------------------------------------------

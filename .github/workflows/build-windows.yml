@@ -40,10 +40,17 @@ jobs:
       - name: Download wxWidgets
         if: steps.wx-cache.outputs.cache-hit != 'true'
         run: |
+          # curl.exe (not Invoke-WebRequest: it ignores the runner proxy env
+          # and fails opaquely). --fail makes HTTP errors fail the step loudly.
           $url = "https://github.com/wxWidgets/wxWidgets/releases/download/v$env:WX_VERSION/wxWidgets-$env:WX_VERSION.zip"
-          Invoke-WebRequest -Uri $url -OutFile wx.zip
-          Expand-Archive wx.zip -DestinationPath .
-          Move-Item "wxWidgets-$env:WX_VERSION" wx
+          curl.exe -L --fail --retry 3 -o wx.zip "$url"
+          if (-not (Test-Path wx.zip)) { throw "download failed: wx.zip not found" }
+          Write-Host ("downloaded bytes: " + (Get-Item wx.zip).Length)
+          Expand-Archive wx.zip -DestinationPath wx-src -Force
+          $inner = Get-ChildItem wx-src -Directory | Select-Object -First 1
+          if (-not $inner) { throw "extract failed: no top-level directory in wx-src" }
+          Move-Item $inner.FullName wx
+          Write-Host ("wx source ready at .\\wx (was " + $inner.Name + ")")
 
       - name: Build wxWidgets (shared, x64, Debug + Release)
         if: steps.wx-cache.outputs.cache-hit != 'true'
@@ -102,10 +109,17 @@ jobs:
       - name: Download wxWidgets
         if: steps.wx-cache.outputs.cache-hit != 'true'
         run: |
+          # curl.exe (not Invoke-WebRequest: it ignores the runner proxy env
+          # and fails opaquely). --fail makes HTTP errors fail the step loudly.
           $url = "https://github.com/wxWidgets/wxWidgets/releases/download/v$env:WX_VERSION/wxWidgets-$env:WX_VERSION.zip"
-          Invoke-WebRequest -Uri $url -OutFile wx.zip
-          Expand-Archive wx.zip -DestinationPath .
-          Move-Item "wxWidgets-$env:WX_VERSION" wx
+          curl.exe -L --fail --retry 3 -o wx.zip "$url"
+          if (-not (Test-Path wx.zip)) { throw "download failed: wx.zip not found" }
+          Write-Host ("downloaded bytes: " + (Get-Item wx.zip).Length)
+          Expand-Archive wx.zip -DestinationPath wx-src -Force
+          $inner = Get-ChildItem wx-src -Directory | Select-Object -First 1
+          if (-not $inner) { throw "extract failed: no top-level directory in wx-src" }
+          Move-Item $inner.FullName wx
+          Write-Host ("wx source ready at .\\wx (was " + $inner.Name + ")")
 
       - name: Build wxWidgets (shared, x64, Debug + Release)
         if: steps.wx-cache.outputs.cache-hit != 'true'

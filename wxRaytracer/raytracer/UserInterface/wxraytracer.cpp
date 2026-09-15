@@ -966,8 +966,13 @@ void RenderCanvas::OnNewPixel( wxCommandEvent& event )
    wxBufferedDC bufferedDC(&cdc, *theImage);
    
    //iterate over all pixels in the event
+#if WXWIDGETS292>0
+   vector<RenderPixel*> *pixelsUpdate =
+       static_cast<const wxThreadEvent&>(event).GetPayload< vector<RenderPixel*>* >();
+#else
    vector<RenderPixel*> *pixelsUpdate =
                         (vector<RenderPixel*> *)event.GetClientData();
+#endif
    
    for(vector<RenderPixel*>::iterator itr = pixelsUpdate->begin();
                         itr != pixelsUpdate->end(); itr++)
@@ -1754,7 +1759,7 @@ RenderPixel::RenderPixel(unsigned int _x, unsigned int _y, unsigned int _red, un
 /******************************************************************************/
 
 #if WXWIDGETS292>0
-wxDEFINE_EVENT(wxEVT_RENDER, wxCommandEvent);
+wxDEFINE_EVENT(wxEVT_RENDER, wxThreadEvent);
 #else
 DEFINE_EVENT_TYPE(wxEVT_RENDER)
 #endif
@@ -1815,8 +1820,17 @@ void RenderThread::NotifyCanvas()
    //vector<RenderPixel*> *pixelsUpdate = new vector<RenderPixel*>(pixels);
    //pixels.clear();
    
+   // wxCommandEvent::SetClientData was removed in wx 3.x; on wx >= 2.9 the
+   // pixels travel as a wxThreadEvent payload (copied pointer, no ownership
+   // transfer, so AddPendingEvent's event clone stays safe).
+#if WXWIDGETS292>0
+   wxThreadEvent event(wxEVT_RENDER);
+   event.SetId(ID_RENDER_NEWPIXEL);
+   event.SetPayload(pixels);
+#else
    wxCommandEvent event(wxEVT_RENDER, ID_RENDER_NEWPIXEL);
    event.SetClientData(pixels);
+#endif
    canvas->GetEventHandler()->AddPendingEvent(event);
 
    pixels = new vector<RenderPixel*>();
