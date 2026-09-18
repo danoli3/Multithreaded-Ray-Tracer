@@ -47,10 +47,19 @@ jobs:
           if (-not (Test-Path wx.zip)) { throw "download failed: wx.zip not found" }
           Write-Host ("downloaded bytes: " + (Get-Item wx.zip).Length)
           Expand-Archive wx.zip -DestinationPath wx-src -Force
-          $inner = Get-ChildItem wx-src -Directory | Select-Object -First 1
-          if (-not $inner) { throw "extract failed: no top-level directory in wx-src" }
+          $inner = Get-ChildItem wx-src -Directory | Where-Object { $_.Name -like "wxWidgets-*" } | Select-Object -First 1
+          if (-not $inner) {
+            Write-Host "top-level entries in wx-src:"
+            Get-ChildItem wx-src | ForEach-Object { Write-Host ("  " + $_.Name) }
+            throw "extract failed: no wxWidgets-* top-level directory in wx-src"
+          }
           Move-Item $inner.FullName wx
-          Write-Host ("wx source ready at .\\wx (was " + $inner.Name + ")")
+          Write-Host ("wx source ready at .\wx (was " + $inner.Name + ")")
+          if (-not (Test-Path wx/build/msw/makefile.vc)) {
+            Write-Host "entries in wx/:"
+            Get-ChildItem wx | Select-Object -First 25 | ForEach-Object { Write-Host ("  " + $_.Name) }
+            throw "unexpected wx layout: wx/build/msw/makefile.vc missing"
+          }
 
       - name: Build wxWidgets (shared, x64, Debug + Release)
         if: steps.wx-cache.outputs.cache-hit != 'true'
@@ -116,10 +125,19 @@ jobs:
           if (-not (Test-Path wx.zip)) { throw "download failed: wx.zip not found" }
           Write-Host ("downloaded bytes: " + (Get-Item wx.zip).Length)
           Expand-Archive wx.zip -DestinationPath wx-src -Force
-          $inner = Get-ChildItem wx-src -Directory | Select-Object -First 1
-          if (-not $inner) { throw "extract failed: no top-level directory in wx-src" }
+          $inner = Get-ChildItem wx-src -Directory | Where-Object { $_.Name -like "wxWidgets-*" } | Select-Object -First 1
+          if (-not $inner) {
+            Write-Host "top-level entries in wx-src:"
+            Get-ChildItem wx-src | ForEach-Object { Write-Host ("  " + $_.Name) }
+            throw "extract failed: no wxWidgets-* top-level directory in wx-src"
+          }
           Move-Item $inner.FullName wx
-          Write-Host ("wx source ready at .\\wx (was " + $inner.Name + ")")
+          Write-Host ("wx source ready at .\wx (was " + $inner.Name + ")")
+          if (-not (Test-Path wx/build/msw/makefile.vc)) {
+            Write-Host "entries in wx/:"
+            Get-ChildItem wx | Select-Object -First 25 | ForEach-Object { Write-Host ("  " + $_.Name) }
+            throw "unexpected wx layout: wx/build/msw/makefile.vc missing"
+          }
 
       - name: Build wxWidgets (shared, x64, Debug + Release)
         if: steps.wx-cache.outputs.cache-hit != 'true'
