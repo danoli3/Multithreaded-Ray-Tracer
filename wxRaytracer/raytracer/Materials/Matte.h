@@ -38,6 +38,9 @@ class Matte: public Material {
 				
 		virtual RGBColor										
 		shade(ShadeRec& sr);
+
+		virtual RGBColor
+		area_light_shade(ShadeRec& sr);
 		
 		void 
 		set_sampler(Sampler* sPtr);

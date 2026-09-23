@@ -38,9 +38,8 @@
 #include "ShadeRec.h"
 #include "Maths.h"
 
-// build functions
-
-#include "BuildShadedObjects.cpp"
+// Build functions (World::build) live in build/BuildShadedObjects.cpp,
+// which is compiled as its own translation unit - do not #include it here.
 
 
 // -------------------------------------------------------------------- default constructor

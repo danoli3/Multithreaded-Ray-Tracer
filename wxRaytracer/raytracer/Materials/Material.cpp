@@ -36,4 +36,12 @@ Material::shade(ShadeRec& sr) {
 }
 
 
+// ---------------------------------------------------------------- area_light_shade
+
+RGBColor
+Material::area_light_shade(ShadeRec& sr) {
+	return (black);
+}
+
+
 

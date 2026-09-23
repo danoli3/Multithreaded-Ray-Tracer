@@ -20,8 +20,11 @@ class Material : public ReferenceCount {
 		~Material(void);
 				
 		virtual RGBColor
-		shade(ShadeRec& sr);	
-		
+		shade(ShadeRec& sr);
+
+		virtual RGBColor
+		area_light_shade(ShadeRec& sr);
+
 	protected:
 	
 		Material& 								

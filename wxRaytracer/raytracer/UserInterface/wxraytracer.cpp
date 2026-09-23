@@ -827,6 +827,10 @@ RenderCanvas::RenderCanvas(wxWindow *parent)
 {
    SetOwnBackgroundColour(wxColour(143,144,150));
    queue=new Queue(this);
+#if WXWIDGETS292>0
+   // Type-safe binding for the wxThreadEvent handler (see OnNewPixel).
+   Bind(wxEVT_RENDER, &RenderCanvas::OnNewPixel, this, ID_RENDER_NEWPIXEL);
+#endif
 }
 
 RenderCanvas::~RenderCanvas(void)
@@ -926,7 +930,10 @@ void RenderCanvas::OnRenderCompleted( wxCommandEvent& event )
    
 	  if(manager != NULL)
 	   {	manager->Delete();
-			delete manager;
+			// Detached thread: it destroys itself when Entry() returns
+			// (~RenderThread clears canvas->manager). Deleting the object
+			// here frees it while Entry() is still running and segfaults
+			// at completion.
 			manager = NULL; }
 
 	   if(w != NULL)
@@ -958,17 +965,21 @@ void RenderCanvas::OnRenderCompleted( wxCommandEvent& event )
 	   	
 }
 
+#if WXWIDGETS292>0
+void RenderCanvas::OnNewPixel( wxThreadEvent& event )
+#else
 void RenderCanvas::OnNewPixel( wxCommandEvent& event )
+#endif
 {
    //set up double buffered device context
    wxClientDC cdc(this);
    DoPrepareDC(cdc);
    wxBufferedDC bufferedDC(&cdc, *theImage);
-   
+
    //iterate over all pixels in the event
 #if WXWIDGETS292>0
    vector<RenderPixel*> *pixelsUpdate =
-       static_cast<const wxThreadEvent&>(event).GetPayload< vector<RenderPixel*>* >();
+       event.GetPayload< vector<RenderPixel*>* >();
 #else
    vector<RenderPixel*> *pixelsUpdate =
                         (vector<RenderPixel*> *)event.GetClientData();
@@ -1211,7 +1222,7 @@ void RenderCanvas::renderStart(void)
 			 unsigned long memory = ((pixelsToRender * size) * 0.0009765625); // KB
 			 memory = memory * 0.0009765625; // MB
 			 
-			 wxMessageBox(wxT(wxString::Format(wxT("Error: Not enough memory space! Need: %ld MB free RAM"), memory)) );
+			 wxMessageBox(wxString::Format(wxT("Error: Not enough memory space! Need: %ld MB free RAM"), memory));
 			 wxMessageBox(wxT("Resolution may be too great"));
 			 throw 1;
 		}
@@ -1766,7 +1777,13 @@ DEFINE_EVENT_TYPE(wxEVT_RENDER)
 
 BEGIN_EVENT_TABLE( RenderCanvas, wxScrolledWindow )
 	EVT_COMMAND(wxID_ANY, wxEVT_THREAD, RenderCanvas::OnThread)
+#if WXWIDGETS292>0
+    // ID_RENDER_NEWPIXEL arrives as a wxThreadEvent (see
+    // RenderThread::NotifyCanvas) and is bound with Bind() in the
+    // constructor: static EVT_COMMAND entries assume wxCommandEvent.
+#else
 	EVT_COMMAND(ID_RENDER_NEWPIXEL, wxEVT_RENDER, RenderCanvas::OnNewPixel)
+#endif
     EVT_COMMAND(ID_RENDER_COMPLETED, wxEVT_RENDER, RenderCanvas::OnRenderCompleted)
     EVT_TIMER(ID_RENDER_UPDATE, RenderCanvas::OnTimerUpdate)
 END_EVENT_TABLE()
@@ -1886,5 +1903,7 @@ RenderThread::~RenderThread()
 	 wxCriticalSectionLocker enter(canvas->managerCS);
 
      // the thread is being destroyed; make sure not to leave dangling pointers around
-     canvas->manager = NULL;
+     // (only clear our own slot: a new render may have started a successor manager)
+     if (canvas->manager == this)
+         canvas->manager = NULL;
 }

@@ -262,7 +262,14 @@ public:
    void renderResume(void);
    void OnRenderCompleted( wxCommandEvent& event );
    void OnTimerUpdate( wxTimerEvent& event );
+#if WXWIDGETS292>0
+   // wxEVT_RENDER carries a wxThreadEvent payload (see
+   // RenderThread::NotifyCanvas); wxThreadEvent is unrelated to
+   // wxCommandEvent, so the handler must take wxThreadEvent.
+   void OnNewPixel( wxThreadEvent& event );
+#else
    void OnNewPixel( wxCommandEvent& event );
+#endif
 
    void OnStart(wxCommandEvent& WXUNUSED(event)); // start one worker thread
    void OnStop(wxCommandEvent& WXUNUSED(event));   // stop one worker thread

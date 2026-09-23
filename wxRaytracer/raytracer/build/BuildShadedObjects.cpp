@@ -5,9 +5,40 @@
 // Jittered sampling for antialiasing is hardwired into the PinHole::render_scene function.
 // There are no sampler classes in this project.
 // These are in the Chapter 5 download file.
-// The spheres are the same as those in the Chapter 14 page one image. 
+// The spheres are the same as those in the Chapter 14 page one image.
 
-void 												
+#include "World.h"
+#include "Constants.h"
+
+// geometric objects
+
+#include "Plane.h"
+#include "Sphere.h"
+
+// tracers
+
+#include "RayCast.h"
+
+// cameras
+
+#include "Pinhole.h"
+
+// lights
+
+#include "Ambient.h"
+#include "Directional.h"
+
+// materials
+
+#include "Matte.h"
+
+// utilities
+
+#include "Point3D.h"
+#include "Normal.h"
+#include "RGBColor.h"
+
+void
 World::build(void) {
 	int num_samples = 1; 
 	
