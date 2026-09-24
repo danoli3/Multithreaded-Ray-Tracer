@@ -82,4 +82,39 @@ The bundled wxWidgets 2.8.0 tree is legacy-only and cannot link on VS2019+.
 Related: openFrameworks port skeleton - danoli3/ofxRayTracer
 https://github.com/danoli3/ofxRayTracer
 
+----------------------------------------------
+Build and run on macOS (Homebrew + CMake)
+----------------------------------------------
+1. ) Install the dependencies:
+     brew install wxwidgets cmake
+2. ) From the repository root, configure and build (Release):
+     cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+     cmake --build build --parallel
+3. ) Run it from the repository root (exact binary name):
+     ./build/wxRaytracer
+4. ) In the app: Render > Start to ray trace the image,
+     File > Save As... to save it (JPEG default).
+
+Notes:
+- Requires wxWidgets 3.2 or newer (Homebrew supplies it).
+- Use Release for rendering speed (2-4x faster than Debug).
+
+----------------------------------------------
+Build and run on Windows with Visual Studio 2026
+----------------------------------------------
+1. ) Install Visual Studio 2026 (v145 toolset) and CMake.
+2. ) Install/build wxWidgets 3.2.x and set the WXWIN environment
+     variable to its root, e.g. C:\wxWidgets-3.2.10
+     (see BUILD.md for the from-source steps).
+3. ) Open wxRaytracerVS2026.sln, select Release + x64,
+     then Build > Build Solution (F5 to build and run).
+4. ) The exe lands in:
+     wxRaytracer\bin\vs2026\x64\Release\wxRaytracer.exe
+     Run it from Explorer, the terminal, or with F5.
+5. ) If Windows reports missing wx DLLs at startup, add the matching
+     wx lib dir to PATH, e.g. %WXWIN%\lib\vc145_x64_dll
+     (or copy those DLLs next to the exe).
+6. ) In the app: Render > Start to ray trace the image,
+     File > Save As... to save it (JPEG default).
+
 
